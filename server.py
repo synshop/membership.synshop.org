@@ -8,27 +8,43 @@ from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from authlib.integrations.base_client.errors import OAuthError
 
-from dotenv import find_dotenv, load_dotenv
 from flask import Flask, redirect, render_template, session, url_for
+from crypto import SettingsUtil, CryptoUtil
 
-ENV_FILE = find_dotenv()
-if ENV_FILE:
-    load_dotenv(ENV_FILE)
+try:
+    import config
+except Exception as e:
+    print('ERROR', 'Missing "config.py" file. See https://github.com/synshop/membership.synshop.org for info')
+    quit()
+
+RUN_MODE = 'development'
+
+ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get(RUN_MODE == 'development')
 
 app = Flask(__name__)
-app.secret_key = env.get("APP_SECRET_KEY")
 
+# Decrypt Configuration Variables
+try:
+    app.secret_key = CryptoUtil.decrypt(config.ENCRYPTED_SESSION_KEY, ENCRYPTION_KEY)
+    app.config['AUTH0_CLIENT_SECRET'] = CryptoUtil.decrypt(config.ENCRYPTED_AUTH0_CLIENT_SECRET, ENCRYPTION_KEY)
+except Exception as e:
+    print('ERROR', 'Failed to decrypt "ENCRYPTED_" config variables in "config.py".  Error was:', e)
+    quit()
+
+# Load Plaintext Configuration Variables
+app.config['AUTH0_CLIENT_ID'] = config.AUTH0_CLIENT_ID
+app.config['AUTH0_DOMAIN'] = config.AUTH0_DOMAIN
 
 oauth = OAuth(app)
 
 oauth.register(
     "auth0",
-    client_id=env.get("AUTH0_CLIENT_ID"),
-    client_secret=env.get("AUTH0_CLIENT_SECRET"),
+    client_id=app.config['AUTH0_CLIENT_ID'],
+    client_secret=app.config['AUTH0_CLIENT_SECRET'],
     client_kwargs={
         "scope": "openid profile email",
     },
-    server_metadata_url=f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration',
+    server_metadata_url=f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/openid-configuration',
 )
 
 
@@ -65,7 +81,7 @@ def logout():
     session.clear()
     return redirect(
         "https://"
-        + env.get("AUTH0_DOMAIN")
+        + app.config['AUTH0_DOMAIN']
         + "/v2/logout?"
         + urlencode(
             {
