@@ -21,8 +21,7 @@ STRIPE_VERSION = "2023-08-16"
 stripe.api_version=STRIPE_VERSION
 
 def get_stripe_products():
-    products = stripe.Product.list().data
+    products = stripe.Product.list(active=True).data
     for p in products:
-        if p['active'] == True: 
-            print(p['name'])
+        print(p['name'])
             
