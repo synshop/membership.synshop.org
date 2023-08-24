@@ -1,7 +1,6 @@
 
-import json
-from os import environ as env
-from urllib.parse import quote_plus, urlencode
+from functools import wraps
+import json, logging
 
 from authlib.integrations.flask_client import OAuth
 from authlib.integrations.base_client.errors import OAuthError
@@ -22,6 +21,7 @@ except Exception as e:
 # Load Plaintext Configuration Variables
 app.config['AUTH0_CLIENT_ID'] = config.AUTH0_CLIENT_ID
 app.config['AUTH0_DOMAIN'] = config.AUTH0_DOMAIN
+app.config['LOG_FILE'] = config.LOG_FILE
 
 # Load Encrypted Configuration Variables
 try:
@@ -29,10 +29,30 @@ try:
     ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get(RUN_MODE == 'development')
     app.secret_key = CryptoUtil.decrypt(config.ENCRYPTED_SESSION_KEY, ENCRYPTION_KEY)
     app.config['AUTH0_CLIENT_SECRET'] = CryptoUtil.decrypt(config.ENCRYPTED_AUTH0_CLIENT_SECRET, ENCRYPTION_KEY)
-    app.config['STRIPE_TOKEN'] = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN, ENCRYPTION_KEY)
 except Exception as e:
     print('ERROR', 'Failed to decrypt "ENCRYPTED_" config variables in "config.py".  Error was:', e)
     quit()
+
+# Logging
+file_handler = logging.FileHandler(app.config['LOG_FILE'])
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s: %(message)s'))
+file_handler.setLevel(logging.INFO)
+app.logger.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
+
+app.logger.info("-------------------------------------")
+app.logger.info("SYN Shop Membership System Started...")
+app.logger.info("-------------------------------------")
+
+# Decorator for Required Auth
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('logged_in') is None:
+            return redirect(url_for("show_login"))
+        return f(*args, **kwargs)
+
+    return decorated_function
 
 oauth = OAuth(app)
 
@@ -76,6 +96,5 @@ def logout():
     session.clear()
     return redirect("/")
 
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=env.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=8000)
