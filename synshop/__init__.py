@@ -10,8 +10,8 @@ except Exception as e:
 
 # Load Configuration Variables
 try:
-    RUN_MODE = 'development'
-    ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get(RUN_MODE == 'development')
+    # RUN_MODE = 'development'
+    ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get()
     stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN, ENCRYPTION_KEY)
     stripe.api_version = config.STRIPE_VERSION
 except Exception as e:
@@ -28,7 +28,7 @@ def get_product_description(product):
     p = stripe.Product.retrieve(product)["description"]
     return p
 
-def get_subscriptions_for_member(email=None):
+def get_subscriptions_for_member(email="None"):
     sr=stripe.Customer.search(query='email: "' + email + '"', limit=1)
     sc=sr.data[0]
     stripe_subscriptions=stripe.Subscription.list(customer=sc.id, limit=100)
@@ -38,12 +38,4 @@ def get_subscriptions_for_member(email=None):
 
 def get_product_details(p="prod_OOOFroHauh6Jrr"):
     print(stripe.Product.retrieve(p))
-    print(stripe.Price.list(product="prod_OOOFroHauh6Jrr"))
-
-"""
-TODO:
-* Need to figure out how to programmatically add a product -> price to a subscription
-* Also, subscriptions need to be on the same schedule
-* Need a function that gets a list of products and their associated prices
-
-"""
+    print(stripe.Price.list(product=p))

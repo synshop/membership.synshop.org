@@ -7,7 +7,7 @@ from authlib.integrations.base_client.errors import OAuthError
 
 from flask import Flask, redirect, render_template, session, url_for, g
 from crypto import SettingsUtil, CryptoUtil
-from synshop import get_stripe_products
+from synshop import get_subscriptions_for_member
 
 app = Flask(__name__) 
 
@@ -25,8 +25,7 @@ app.config['LOG_FILE'] = config.LOG_FILE
 
 # Load Encrypted Configuration Variables
 try:
-    RUN_MODE = 'development'
-    ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get(RUN_MODE == 'development')
+    ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get()
     app.secret_key = CryptoUtil.decrypt(config.ENCRYPTED_SESSION_KEY, ENCRYPTION_KEY)
     app.config['AUTH0_CLIENT_SECRET'] = CryptoUtil.decrypt(config.ENCRYPTED_AUTH0_CLIENT_SECRET, ENCRYPTION_KEY)
 except Exception as e:
@@ -48,8 +47,8 @@ app.logger.info("-------------------------------------")
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('logged_in') is None:
-            return redirect(url_for("show_login"))
+        if session.get('user') is None:
+            return redirect(url_for("home"))
         return f(*args, **kwargs)
 
     return decorated_function
@@ -69,7 +68,10 @@ oauth.register(
 # Controllers API
 @app.route("/")
 def home():
-    get_stripe_products()
+
+    if (session):
+        get_subscriptions_for_member(session["user"]["userinfo"]["email"])
+
     return render_template(
         "home.html",
         session=session.get("user"),
@@ -97,4 +99,4 @@ def logout():
     return redirect("/")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=8000, debug=True)
