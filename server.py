@@ -7,7 +7,7 @@ from authlib.integrations.base_client.errors import OAuthError
 
 from flask import Flask, redirect, render_template, session, url_for, g
 from crypto import SettingsUtil, CryptoUtil
-from synshop import get_stripe_products
+from synshop import get_subscriptions_for_member
 
 app = Flask(__name__) 
 
@@ -25,8 +25,7 @@ app.config['LOG_FILE'] = config.LOG_FILE
 
 # Load Encrypted Configuration Variables
 try:
-    RUN_MODE = 'development'
-    ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get(RUN_MODE == 'development')
+    ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get()
     app.secret_key = CryptoUtil.decrypt(config.ENCRYPTED_SESSION_KEY, ENCRYPTION_KEY)
     app.config['AUTH0_CLIENT_SECRET'] = CryptoUtil.decrypt(config.ENCRYPTED_AUTH0_CLIENT_SECRET, ENCRYPTION_KEY)
 except Exception as e:
@@ -48,8 +47,8 @@ app.logger.info("-------------------------------------")
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('logged_in') is None:
-            return redirect(url_for("show_login"))
+        if session.get('user') is None:
+            return redirect(url_for("home"))
         return f(*args, **kwargs)
 
     return decorated_function
@@ -66,30 +65,33 @@ oauth.register(
     server_metadata_url=f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/openid-configuration',
 )
 
-# Controllers API
 @app.route("/")
-def home():
-    get_stripe_products()
-    return render_template(
-        "home.html",
-        session=session.get("user"),
-        pretty=json.dumps(session.get("user"), indent=4),
-    )
+def index():
+    return render_template("index.html")
 
 @app.route("/callback", methods=["GET", "POST"])
 def callback():
     try:
         token = oauth.auth0.authorize_access_token()
         session["user"] = token
-        return redirect("/")
+
+        return render_template(
+            "home.html",
+            session=session.get("user"),
+            pretty=json.dumps(session.get("user"), indent=4),
+        )
     except OAuthError:
         return render_template("validate.html")
 
 @app.route("/login")
 def login():
-    return oauth.auth0.authorize_redirect(
-        redirect_uri=url_for("callback", _external=True)
-    )
+    redirect_uri=url_for("callback", _external=True)
+    return oauth.auth0.authorize_redirect(redirect_uri)
+
+@app.route("/signup")
+def signup():
+    redirect_uri=url_for("callback", _external=True)
+    return oauth.auth0.authorize_redirect(redirect_uri,screen_hint='signup')
 
 @app.route("/logout")
 def logout():
@@ -97,4 +99,4 @@ def logout():
     return redirect("/")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="127.0.0.1", port=8000, debug=True)

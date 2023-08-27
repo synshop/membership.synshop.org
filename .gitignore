@@ -4,3 +4,5 @@ activate
 config.py
 __pycache__
 *.pyc
+design-notes.md
+membership.service
