@@ -58,15 +58,19 @@
 
 <div class="initial-content">
 
-  <div class="page__hero--overlay"
-    style="background-color: #5e616c; background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/static/images/header_synshop.png');">
-    
-      <div class="wrapper">
-        <h1 id="page-title" class="page__title" itemprop="headline">Shop Membership Management</h1>
-      </div>
+  <div class="page__hero--overlay" style="background-color: #5e616c; background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/static/images/header_synshop.png');">
+    <div class="wrapper">
+      <h1 id="page-title" class="page__title" itemprop="headline">Shop Membership Management</h1>
+    </div>
   </div>
-  </div>
-  <div>
+</div>
 
+<div>
+    {% if session %}
+    <h1>Welcome {{session.userinfo.name}}!</h1>
+    <p><a href="/logout">Logout</a></p>
+    <div><pre>{{pretty}}</pre></div>
+    {% endif %}
   </body>
+</div>
 </html>

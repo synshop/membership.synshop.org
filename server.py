@@ -22,6 +22,7 @@ except Exception as e:
 app.config['AUTH0_CLIENT_ID'] = config.AUTH0_CLIENT_ID
 app.config['AUTH0_DOMAIN'] = config.AUTH0_DOMAIN
 app.config['LOG_FILE'] = config.LOG_FILE
+app.config['LOGOUT_REDIRECT_URL'] = config.LOGOUT_REDIRECT_URL
 
 # Load Encrypted Configuration Variables
 try:
@@ -76,7 +77,7 @@ def callback():
         session["user"] = token
 
         return render_template(
-            "home.html",
+            "index.html",
             session=session.get("user"),
             pretty=json.dumps(session.get("user"), indent=4),
         )
@@ -96,7 +97,7 @@ def signup():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/")
+    return redirect(app.config['LOGOUT_REDIRECT_URL'])
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True)
