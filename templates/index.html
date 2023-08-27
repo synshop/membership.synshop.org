@@ -1,12 +1,72 @@
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <title>SYN SHOP</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SYN Shop Membership Management</title>
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.min.js') }}"></script> 
   </head>
-  <body>
-    <ul>
-        <li><a href="/login">Login</a></li>
-        <li><a href="/signup">Signup</a></li>
-    </ul>
+
+  <body class="layout--splash">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+          <a class="site-logo" href="/"><img src="{{ url_for('static', filename='images/logo_textless.png') }}" alt="SYN Shop"></a>
+        
+        <a class="site-title" href="/">
+          SYN Shop
+          <span class="site-subtitle">The Las Vegas Hackerspace</span>
+        </a>
+        <ul class="visible-links"><li class="masthead__menu-item">
+              <a href="/">Home</a>
+            </li><li class="masthead__menu-item">
+              <a href="/about/">About</a>
+            </li><li class="masthead__menu-item">
+              <a href="/hours/">Hours</a>
+            </li><li class="masthead__menu-item">
+              <a href="/equipment/">Equipment</a>
+            </li><li class="masthead__menu-item">
+              <a href="/events/">Events</a>
+            </li><li class="masthead__menu-item">
+              <a href="/contact/">Contact</a>
+            </li>
+          </ul>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<div class="initial-content">
+
+  <div class="page__hero--overlay"
+    style="background-color: #5e616c; background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/static/images/header_synshop.png');">
+    
+      <div class="wrapper">
+        <h1 id="page-title" class="page__title" itemprop="headline">Shop Membership Management</h1>
+      </div>
+  </div>
+  </div>
+  <div>
+
   </body>
 </html>
