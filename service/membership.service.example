@@ -1,15 +1,23 @@
 [Unit]
-Description=SYN Shop Member Managment System
+Description=SYN Shop Membership System
 After=network.target
 
 [Service]
 Type=simple
 User=ubuntu
 Environment="ENCRYPTION_KEY=ChangeMe"
-WorkingDirectory=/opt/ShopIdentifyer
-ExecStart=/opt/ShopIdentifyer/service/gunicorn.sh
+WorkingDirectory=/opt/membership.synshop.org
+ExecStart=/opt/membership.synshop.org/service/gunicorn.sh
 Restart=always
 RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
+
+#
+# README
+#
+# copy this file to a *.service file and symlink it in /etc/systemd/system
+# systemctl daemon-reload
+# systemctl start membership
+# systemctl stop membership
