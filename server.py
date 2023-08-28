@@ -5,7 +5,7 @@ import json, logging
 from authlib.integrations.flask_client import OAuth
 from authlib.integrations.base_client.errors import OAuthError
 
-from flask import Flask, redirect, render_template, session, url_for, g
+from flask import Flask, redirect, render_template, request, session, url_for
 from crypto import SettingsUtil, CryptoUtil
 from synshop import get_subscriptions_for_member
 
@@ -75,23 +75,24 @@ def callback():
     try:
         token = oauth.auth0.authorize_access_token()
         session["user"] = token
+        action = request.args.get('s')
 
-        return render_template(
-            "index.html",
-            session=session.get("user"),
-            pretty=json.dumps(session.get("user"), indent=4),
-        )
+        if action == "new":
+            return redirect(url_for("new_user"))
+        else:
+            return redirect(url_for("update_user"))
+
     except OAuthError:
         return render_template("validate.html")
 
 @app.route("/login")
 def login():
-    redirect_uri=url_for("callback", _external=True)
+    redirect_uri=url_for("callback", s="existing", _external=True)
     return oauth.auth0.authorize_redirect(redirect_uri)
 
 @app.route("/signup")
 def signup():
-    redirect_uri=url_for("callback", _external=True)
+    redirect_uri=url_for("callback", s="new", _external=True)
     return oauth.auth0.authorize_redirect(redirect_uri,screen_hint='signup')
 
 @app.route("/logout")
@@ -103,6 +104,11 @@ def logout():
 @app.route("/new")
 def new_user():
     return render_template("new_user.html",session=session.get("user"))
+
+@login_required
+@app.route("/update")
+def update_user():
+    return render_template("update_user.html",session=session.get("user"))
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True)
