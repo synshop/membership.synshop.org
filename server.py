@@ -49,7 +49,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get('user') is None:
-            return redirect(url_for("home"))
+            return redirect(url_for("login"))
         return f(*args, **kwargs)
 
     return decorated_function
@@ -98,6 +98,11 @@ def signup():
 def logout():
     session.clear()
     return redirect(app.config['LOGOUT_REDIRECT_URL'])
+
+@login_required
+@app.route("/new")
+def new_user():
+    return render_template("new_user.html",session=session.get("user"))
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True)

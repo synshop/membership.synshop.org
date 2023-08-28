@@ -64,32 +64,12 @@
     </div>
   </div>
 
-  <div id="main" role="main">
-  <div class="page__inner-wrap">
-
-    <section class="page__content e-content" itemprop="text">
-
-<h1 id="new-members">New Members</h1>
-<p>
-  To use any of the equipment at SYN Shop, you'll need to sign up for at least a monthly 
-  membership ($50, which you can cancel at any time) and sign a 
-  <a href="https://synshop.org/assets/pdf/SYN-Shop-Liability-Waiver-Members.pdf">liability waiver</a>.  
-  Once you create an account, you'll be able to choose a subscription plan that best suits your needs.</p>
-
-<p>Please <a href="https://membership.synshop.net/signup">create an account</a> (you'll need to verify your email) to get started.</p>
-
-<h1 id="existing-members">Existing Members</h1>
-<p>If you are an existing member, you <a href="https://membership.synshop.net/login">can make changes to your account here</a>.</p>
-
-
   {% if session %}
   <h1>Welcome {{session.userinfo.name}}!</h1>
   <p><a href="/logout">Logout</a></p>
   <div><pre>{{pretty}}</pre></div>
   {% endif %}
 
-  </div>
-  </div>
 </div>
 
 </body>
