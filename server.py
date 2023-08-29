@@ -105,6 +105,10 @@ def logout():
 def new_user():
     return render_template("new_user.html",session=session.get("user"))
 
+@app.route("/newtest")
+def new_usertest():
+    return render_template("new_user.html")
+
 @login_required
 @app.route("/update")
 def update_user():
