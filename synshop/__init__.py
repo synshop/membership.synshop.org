@@ -19,6 +19,11 @@ except Exception as e:
     quit()
 
 ## Stripe functions
+
+def has_stripe_account(email=None):
+    sr=stripe.Customer.search(query='email: "' + email + '"', limit=1)
+    return len(sr['data'])
+
 def get_stripe_products():
     products = stripe.Product.list(active=True).data
     for p in products:

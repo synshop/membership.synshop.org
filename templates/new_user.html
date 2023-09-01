@@ -5,12 +5,119 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SYN Shop Membership Management</title>
 
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static',filename='images/favicon.ico') }}">
+
   <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
   <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
   <link href="{{ url_for('static', filename='css/card-js.min.css') }}" rel="stylesheet">
   <script src="{{ url_for('static', filename='js/jquery-1.12.4.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/card-js.min.js') }}"></script>
+
+  <script language="javascript">
+  
+  $( document ).ready(function() {
+
+    $("#rowLockerFee").hide();
+    $("#rowDonation").hide();
+    
+    let paymentFreqString = {};
+    paymentFreqString[1] = "Every Month";
+    paymentFreqString[3] = "Every 3 Months";
+    paymentFreqString[6] = "Every 6 Months";
+    paymentFreqString[12] = "Every 12 Months";
+
+    const user = {
+      email: "{{ session.userinfo.email }}",
+      fullName: "Bobby McGee",
+      discordId: "bobbyg",
+      membershipFee: {{ mf }},
+      defaultLockerFee: {{ lf }},
+      lockerFee: 0,
+      membershipIsPaused: false,
+      donationAmount: 0,
+      paymentFrequency: 1,
+      charterMemberCoupon: false,
+      membershipFeeSubtotal: function () {
+        return (this.membershipFee * this.paymentFrequency)
+      },
+      lockerFeeSubtotal: function () {
+        return (this.lockerFee * this.paymentFrequency)
+      },
+      donationSubtotal: function () {
+        return (this.donationAmount * this.paymentFrequency)
+      },
+      grandTotal: function() {
+        return (this.membershipFeeSubtotal() + this.lockerFeeSubtotal() + this.donationSubtotal())
+      }
+
+    };
+
+    function dump_user() {
+      console.log(user);
+      console.log(user.membershipFeeSubtotal());
+      console.log(user.lockerFeeSubtotal());
+      console.log(user.donationSubtotal());
+    }
+
+    function update_summary() {
+      p = paymentFreqString[user.paymentFrequency];
+
+      $("#membershipFeeFreq").html(p);
+      $("#membershipFeeSubTotal").html("$" + user.membershipFeeSubtotal());
+      $("#grandTotal").html("$" + user.grandTotal());
+
+      if (user.lockerFee != 0) {
+        $("#rowLockerFee").show();
+        $("#lockerFeeFreq").html(p);
+        $("#lockerFeeSubTotal").html("$" + user.lockerFeeSubtotal());        
+      } else {
+        $("#rowLockerFee").hide();
+      }
+
+      if (user.donationAmount != 0) {
+        $("#rowDonation").show();
+        $("#donationAmount").html("$" + user.donationAmount); 
+        $("#donationFreq").html(p);
+        $("#donationSubTotal").html("$" + user.donationSubtotal());        
+      } else {
+        $("#rowDonation").hide();
+      }
+
+    };
+
+    $("#fullName").on("blur", function() {
+      user.fullName = $("#fullName").val();
+    });
+
+    $("#discordId").on("blur", function() {
+      user.discordId = $("#discordId").val();
+    });
+
+    $("#lockerFee").on("change", function() {
+      if ( $(this).prop("checked") == true) {
+        user.lockerFee = user.defaultLockerFee;
+      } else {
+        user.lockerFee = 0;
+      }
+
+      update_summary();
+    
+    });
+    
+    $("input[name='donationRadio']").click(function() {
+      user.donationAmount = $("input[name='donationRadio']:checked").val() * 1;
+      update_summary();
+    });
+
+    $("input[name='payFreqRadio']").click(function() {
+      user.paymentFrequency = $("input[name='payFreqRadio']:checked").val() * 1;
+      update_summary();
+    });
+
+  });
+
+  </script>
 
 </head>
 
@@ -73,16 +180,19 @@
 
       <div class="row g-3" style="margin-bottom:15px;">
         <div class="col">
-          <h6 style="display:inline;margin-right:10px;padding:10px;background:#eee;">brian.e.munroe@gmail.com</h6> (This is your login, so be sure to remember it)
+          <h6 style="display:inline;margin-right:10px;padding:10px;">
+            {{ session.userinfo.email }}
+          </h6> 
+          (This is your login, so be sure to remember it)
         </div>
       </div>
       
       <div class="row g-3">
         <div class="col">
-          <input type="text" class="form-control input-sm" placeholder="Full Name" aria-label="First name">
+          <input type="text" class="form-control input-sm" placeholder="Full Name" name="fullName" id="fullName" aria-label="First name">
         </div>
         <div class="col">
-          <input type="text" class="form-control input-sm" placeholder="Discord ID (optional)" aria-label="Discord ID">
+          <input type="text" class="form-control input-sm" placeholder="Discord ID (optional)" name="discordId" id="discordId" aria-label="Discord ID">
         </div>
       </div>
 
@@ -96,23 +206,25 @@
 
         <ul class="list-group">
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" value="" id="firstCheckbox">
-            <label class="form-check-label" for="firstCheckbox">$50 - Membership Fee</label>
+            <input class="form-check-input me-1" type="checkbox" name="membershipFee" id="membershipFee" checked disabled>
+            <label class="form-check-label" for="membershipFee">$50 - Membership Fee</label>
           </li>
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" value="" id="secondCheckbox">
-            <label class="form-check-label" for="secondCheckbox">$10 - Optional Locker Fee</label>
+            <input class="form-check-input me-1" type="checkbox" name="lockerFee" id="lockerFee">
+            <label class="form-check-label" for="lockerFee">$10 - Optional Locker Fee</label>
           </li>
           </ul>
           
+          <!-- Not needed for new members
           <hr/>
 
           <ul class="list-group">
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" value="" id="thirdCheckbox">
-            <label class="form-check-label" for="thirdCheckbox">Pause Membership</label>
+            <input class="form-check-input me-1" type="checkbox" name="pauseMembership" name="pauseMembership" id="pauseMembership">
+            <label class="form-check-label" for="pauseMembership">Pause Membership</label>
           </li>
         </ul>
+        -->
 
       </div>
     </div>
@@ -124,27 +236,27 @@
 
             <ul class="list-group">
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="listGroupRadio" value="" id="Donation0">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="0" id="Donation0">
                 <label class="form-check-label stretched-link" for="Donation0">No Thanks</label>
               </li>
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="listGroupRadio" value="" id="Donation10">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="10" id="Donation10">
                 <label class="form-check-label stretched-link" for="Donation10">$10 / Month</label>
               </li>
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="listGroupRadio" value="" id="Donation20">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="20" id="Donation20">
                 <label class="form-check-label stretched-link" for="Donation20">$20 / Month</label>
               </li>
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="listGroupRadio" value="" id="Donation30">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="30" id="Donation30">
                 <label class="form-check-label stretched-link" for="Donation30">$30 / Month</label>
               </li>
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="listGroupRadio" value="" id="Donation40">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="40" id="Donation40">
                 <label class="form-check-label stretched-link" for="Donation40">$40 / Month</label>
               </li>
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="listGroupRadio" value="" id="Donation50">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="50" id="Donation50">
                 <label class="form-check-label stretched-link" for="Donation50">$50 / Month</label>
               </li>
             </ul>
@@ -159,19 +271,19 @@
 
         <ul class="list-group">
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="radio" name="listGroupRadio2" value="" id="paymentFreq1">
+            <input class="form-check-input me-1" type="radio" name="payFreqRadio" value="1" id="paymentFreq1">
             <label class="form-check-label" for="paymentFreq1">Billed Monthly</label>
           </li>
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="radio" name="listGroupRadio2" value="" id="paymentFreq3">
+            <input class="form-check-input me-1" type="radio" name="payFreqRadio" value="3" id="paymentFreq3">
             <label class="form-check-label" for="paymentFreq3">Billed Quarterly (every 3 months)</label>
           </li>
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="radio" name="listGroupRadio2" value="" id="paymentFreq6">
+            <input class="form-check-input me-1" type="radio" name="payFreqRadio" value="6" id="paymentFreq6">
             <label class="form-check-label" for="paymentFreq6">Billed Semi-annually (every 6 months)</label>
           </li>
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="radio" name="listGroupRadio2" value="" id="paymentFreq12">
+            <input class="form-check-input me-1" type="radio" name="payFreqRadio" value="12" id="paymentFreq12">
             <label class="form-check-label" for="paymentFreq12">Billed Yearly (every 12 months)</label>
           </li>
         </ul>
@@ -212,34 +324,28 @@
           </thead>
           <tbody>
             <tr>
-              <td>Monthly Membership Fee</td>
-              <td>$50</td>
-              <td>Every 6 Months</td>
-              <td>$300</td>
+              <td>Membership Fee</td>
+              <td>${{ mf }}</td>
+              <td id="membershipFeeFreq"></td>
+              <td id="membershipFeeSubTotal"></td>
             </tr>
-            <tr>
+            <tr id="rowLockerFee">
               <td>Locker Fee</td>
-              <td>$10</td>
-              <td>Every 6 Months</td>
-              <td>$60</td>
+              <td>${{ lf }}</td>
+              <td id="lockerFeeFreq"></td>
+              <td id="lockerFeeSubTotal"></td>
             </tr>
-            <tr>
+            <tr id ="rowDonation">
               <td>Donation</td>
-              <td>$10</td>
-              <td>Every 6 Months</td>
-              <td>$60</td>
-            </tr>
-            <tr>
-              <td>Charter Member Coupon</td>
-              <td>20% Off Membership Fee</td>
-              <td>Every 6 Months</td>
-              <td style="color:red;">$60</td>
-            </tr>            
+              <td id="donationAmount"></td>
+              <td id="donationFreq"></td>
+              <td id="donationSubTotal"></td>
+            </tr>           
             <tr>
              <td></td>
              <td></td>
              <th>TOTAL:</th>
-             <th>$360</th>
+             <th id="grandTotal"></th>
             </tr>
             </tbody>
         </table>

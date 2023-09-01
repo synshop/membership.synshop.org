@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SYN Shop Membership Management</title>
+
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static',filename='images/favicon.ico') }}">
+
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+  <link href="{{ url_for('static', filename='css/card-js.min.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='js/jquery-1.12.4.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/card-js.min.js') }}"></script>
+
+  <script language="javascript">
+  
+  $( document ).ready(function() {
+
+    $("#rowMembershipFee").hide();
+    $("#rowLockerFee").hide();
+    $("#rowDonation").hide();
+    $("#rowCoupon").hide();
+    
+    let paymentFreqString = {};
+    paymentFreqString[1] = "Every Month";
+    paymentFreqString[3] = "Every 3 Months";
+    paymentFreqString[6] = "Every 6 Months";
+    paymentFreqString[12] = "Every 12 Months";
+
+    const user = {
+      email: "{{ session.userinfo.email }}",
+      fullName: "Bobby McGee",
+      discordId: "bobbyg",
+      defaultMembershipFee: {{ mf }},
+      membershipFee: 0,
+      defaultLockerFee: {{ lf }},
+      lockerFee: 0,
+      membershipIsPaused: false,
+      donationAmount: 0,
+      paymentFrequency: 1,
+      charterMemberCoupon: false,
+      membershipFeeSubtotal: function () {
+        return (this.membershipFee * this.paymentFrequency)
+      },
+      lockerFeeSubtotal: function () {
+        return (this.lockerFee * this.paymentFrequency)
+      },
+      donationSubtotal: function () {
+        return (this.donationAmount * this.paymentFrequency)
+      },
+      discountCouponSubtotal: function () {
+        if (this.charterMemberCoupon == true) {
+          return this.membershipFeeSubtotal() * .2
+        } else {
+          return 0;
+        }
+      },
+      grandTotal: function() {
+        return (this.membershipFeeSubtotal() + this.lockerFeeSubtotal() + this.donationSubtotal() + this.discountCouponSubtotal())
+      }
+
+    };
+
+    function update_summary() {
+      p = paymentFreqString[user.paymentFrequency];
+
+      $("#rowMembershipFee").show();
+      $("#membershipFeeAmount").html("$" + user.membershipFee);
+      $("#membershipFeeFreq").html(p);
+      $("#membershipFeeSubTotal").html("$" + user.membershipFeeSubtotal());
+      $("#grandTotal").html("$" + user.grandTotal());
+
+      if (user.membershipIsPaused == true) {
+        $("#membershipFeeFreq").html("Membership Paused");
+      }
+
+      if (user.lockerFee != 0) {
+        $("#rowLockerFee").show();
+        $("#lockerFeeAmount").html("$" + user.lockerFee);
+        $("#lockerFeeFreq").html(p);
+        $("#lockerFeeSubTotal").html("$" + user.lockerFeeSubtotal());        
+      } else {
+        $("#rowLockerFee").hide();
+      }
+
+      if (user.donationAmount != 0) {
+        $("#rowDonation").show();
+        $("#donationAmount").html("$" + user.donationAmount);
+        $("#donationFreq").html(p);
+        $("#donationSubTotal").html("$" + user.donationSubtotal());     
+      } else {
+        $("#rowDonation").hide();
+      }
+
+      if (user.charterMemberCoupon == true) {
+        $("#rowCoupon").show();
+        $("#couponFreq").html(p);
+        $("#couponSubTotal").html("$" + user.discountCouponSubtotal());
+      }
+    };
+
+    $("#fullName").on("blur", function() {
+      user.fullName = $("#fullName").val();
+    });
+
+    $("#discordId").on("blur", function() {
+      user.discordId = $("#discordId").val();
+    });
+
+    $("#membershipFee").on("change", function() {
+      if ( $(this).prop("checked") == true) {
+        user.membershipFee = user.defaultMembershipFee;
+      } else {
+        user.membershipFee = 0;
+      }
+      update_summary();
+    });
+
+    $("#lockerFee").on("change", function() {
+      if ( $(this).prop("checked") == true) {
+        user.lockerFee = user.defaultLockerFee;
+      } else {
+        user.lockerFee = 0;
+      }
+      update_summary();
+    });
+
+    $("#pauseMembership").on("change", function() {
+      if ( $(this).prop("checked") == true) {
+        user.membershipFee = 0;
+        user.lockerFee = 0;
+        user.membershipIsPaused = true;
+        user.donationAmount = 0;
+        $("#membershipFee").prop("checked",false);
+        $("#lockerFee").prop("checked",false);
+        $("input[name='donationRadio']").removeAttr('checked');
+        $("input[name='payFreqRadio']").removeAttr('checked');
+      }
+      update_summary();
+    });
+
+    
+    $("input[name='donationRadio']").click(function() {
+      user.donationAmount = $("input[name='donationRadio']:checked").val() * 1;
+      update_summary();
+    });
+
+    $("input[name='payFreqRadio']").click(function() {
+      user.paymentFrequency = $("input[name='payFreqRadio']:checked").val() * 1;
+      update_summary();
+    });
+
+  });
+
+  </script>
+
+</head>
+
+<body>
+<nav class="navbar navbar-expand-sm sticky-top" style="background-color: #eee;">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">
+      <img src="{{ url_for('static', filename='images/logo_horizontal.png') }}" height="64px" alt="SYN Shop Logo"></a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="#">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Hours</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Equipment</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Events</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div>
+    <ul class="navbar-nav">
+    <li class="nav-item">
+      <a class="nav-link" href="/logout"><b>Logout</b></a>
+    </li>
+  </ul>
+  </div>
+</nav>
+
+<div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
+
+<form class="needs-validation" novalidate>
+
+  <div class="alert alert-warning" role="alert">
+    <h4 class="alert-heading">Membership Management</h4>
+    <p>
+      Let's update your membership...  
+      A payment type is not required if you choose to pause your membership. 
+    </p>
+    <hr>
+    <p class="mb-0">
+      If you have any questions or need help with anything, 
+      please email <a href="mailto:support@synshop.org">support@synshop.org</a> 
+      or reach out in the <a href="#">SYN Shop Discord</a>.
+    </p>
+  </div>
+
+  <!-- User Information -->
+  <div class="card" style="margin-top:50px;margin-bottom:50px;">
+    <h6 class="card-header">Member Information</h6>
+    <div class="card-body">
+
+      <div class="row g-3" style="margin-bottom:15px;">
+        <div class="col">
+          <h6 style="display:inline;margin-right:10px;padding:10px;">
+            {{ session.userinfo.email }}
+          </h6> 
+          (This is your login, so be sure to remember it)
+        </div>
+      </div>
+      
+      <div class="row g-3">
+        <div class="col">
+          <input type="text" class="form-control input-sm" placeholder="Full Name" name="fullName" id="fullName" aria-label="First name">
+        </div>
+        <div class="col">
+          <input type="text" class="form-control input-sm" placeholder="Discord ID (optional)" name="discordId" id="discordId" aria-label="Discord ID">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+    <!-- Subscription Information -->
+    <div class="card" style="margin-bottom:50px;">
+      <h6 class="card-header">Subscription Information</h6>
+      <div class="card-body">
+
+        <ul class="list-group">
+          <li class="list-group-item">
+            <input class="form-check-input me-1" type="checkbox" name="membershipFee" id="membershipFee">
+            <label class="form-check-label" for="membershipFee">${{ mf }} - Membership Fee</label>
+          </li>
+          <li class="list-group-item">
+            <input class="form-check-input me-1" type="checkbox" name="lockerFee" id="lockerFee">
+            <label class="form-check-label" for="lockerFee">$10 - Optional Locker Fee</label>
+          </li>
+          </ul>
+          
+          <hr/>
+
+          <ul class="list-group">
+          <li class="list-group-item">
+            <input class="form-check-input me-1" type="checkbox" name="pauseMembership" name="pauseMembership" id="pauseMembership">
+            <label class="form-check-label" for="pauseMembership">Pause Membership</label>
+          </li>
+        </ul>
+        
+      </div>
+    </div>
+
+    <!-- Donation Information -->
+    <div class="card" style="margin-bottom:50px;">
+          <h6 class="card-header">Extra Donation (Optional)</h6>
+          <div class="card-body">
+
+            <ul class="list-group">
+              <li class="list-group-item">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="0" id="Donation0">
+                <label class="form-check-label stretched-link" for="Donation0">No Thanks</label>
+              </li>
+              <li class="list-group-item">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="10" id="Donation10">
+                <label class="form-check-label stretched-link" for="Donation10">$10 / Month</label>
+              </li>
+              <li class="list-group-item">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="20" id="Donation20">
+                <label class="form-check-label stretched-link" for="Donation20">$20 / Month</label>
+              </li>
+              <li class="list-group-item">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="30" id="Donation30">
+                <label class="form-check-label stretched-link" for="Donation30">$30 / Month</label>
+              </li>
+              <li class="list-group-item">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="40" id="Donation40">
+                <label class="form-check-label stretched-link" for="Donation40">$40 / Month</label>
+              </li>
+              <li class="list-group-item">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="50" id="Donation50">
+                <label class="form-check-label stretched-link" for="Donation50">$50 / Month</label>
+              </li>
+            </ul>
+    
+          </div>
+    </div>
+
+    <!-- Payment Frequency -->
+    <div class="card" style="margin-bottom:50px;">
+      <h6 class="card-header">Payment Frequency</h6>
+      <div class="card-body">
+
+        <ul class="list-group">
+          <li class="list-group-item">
+            <input class="form-check-input me-1" type="radio" name="payFreqRadio" value="1" id="paymentFreq1">
+            <label class="form-check-label" for="paymentFreq1">Billed Monthly</label>
+          </li>
+          <li class="list-group-item">
+            <input class="form-check-input me-1" type="radio" name="payFreqRadio" value="3" id="paymentFreq3">
+            <label class="form-check-label" for="paymentFreq3">Billed Quarterly (every 3 months)</label>
+          </li>
+          <li class="list-group-item">
+            <input class="form-check-input me-1" type="radio" name="payFreqRadio" value="6" id="paymentFreq6">
+            <label class="form-check-label" for="paymentFreq6">Billed Semi-annually (every 6 months)</label>
+          </li>
+          <li class="list-group-item">
+            <input class="form-check-input me-1" type="radio" name="payFreqRadio" value="12" id="paymentFreq12">
+            <label class="form-check-label" for="paymentFreq12">Billed Yearly (every 12 months)</label>
+          </li>
+        </ul>
+
+      </div>
+    </div>
+
+  <!-- Payment Information -->
+  <div class="card" style="margin-bottom:50px;width:75%">
+    <h6 class="card-header">Payment Information</h6>
+    <div class="card-body">
+      <div class="card-js"></div>
+    </div>
+    <div class="card-footer text-body-secondary">
+      Membership payments are processed via the <a href="https://stripe.com/">Stripe.com</a> payment 
+      processing system and <span style="font-weight: bold;">your full credit card information is never 
+      stored on the SYN Shop servers</span>.  Stripe maintains full audited PCI compliance and you can 
+      read more about <a href="https://stripe.com/help/security"> how they have implemented security precautions here</a>.
+      <br/><br/>
+      <img style="display:inline;margin-left:18%;" src="{{ url_for('static', filename='images/stripe_small.png') }} "/>
+      <img style="display:inline;" src="{{ url_for('static', filename='images/medlarge_stripe_cc.png') }} "/>
+    </div>
+  </div>
+
+    <!-- Membership Summary -->
+    <div class="card" style="width:75%;margin-bottom:15px;">
+      <h6 class="card-header">Membership Summary</h6>
+      <div class="card-body">
+
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th scope="col" style="background:#eee;">Item</th>
+              <th scope="col" style="background:#eee;">Monthly Cost</th>
+              <th scope="col" style="background:#eee;">Payment Frequency</th>
+              <th scope="col" style="background:#eee;">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="rowMembershipFee">
+              <td>Membership Fee</td>
+              <td id="membershipFeeAmount"></td>
+              <td id="membershipFeeFreq">Monthly</td>
+              <td id="membershipFeeSubTotal">$50</td>
+            </tr>
+            <tr id="rowLockerFee">
+              <td>Locker Fee</td>
+              <td id="lockerFeeAmount"></td>
+              <td id="lockerFeeFreq"></td>
+              <td id="lockerFeeSubTotal"></td>
+            </tr>
+            <tr id ="rowDonation">
+              <td>Donation</td>
+              <td id="donationAmount"></td>
+              <td id="donationFreq"></td>
+              <td id="donationSubTotal"></td>
+            </tr>
+            <tr id="rowCoupon">
+              <td>Charter Member Coupon</td>
+              <td id="couponAmount">20% Off Membership Fee</td>
+              <td id="couponFreq"></td>
+              <td id="couponSubTotal" style="color:red;"></td>
+            </tr>         
+            <tr>
+             <td></td>
+             <td></td>
+             <th>TOTAL:</th>
+             <th id="grandTotal"></th>
+            </tr>
+            </tbody>
+        </table>
+
+      </div>
+    </div>
+
+  <button type="submit" class="btn btn-lg btn-primary">Submit</button>
+  <button type="submit" class="btn btn-lg btn-secondary">Cancel</button>
+</form>
+</div>
+
+</body>
+</html>
