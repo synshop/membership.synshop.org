@@ -18,6 +18,7 @@
   
   $( document ).ready(function() {
 
+    $("#rowMembershipFee").hide();
     $("#rowLockerFee").hide();
     $("#rowDonation").hide();
     
@@ -53,16 +54,10 @@
 
     };
 
-    function dump_user() {
-      console.log(user);
-      console.log(user.membershipFeeSubtotal());
-      console.log(user.lockerFeeSubtotal());
-      console.log(user.donationSubtotal());
-    }
-
     function update_summary() {
       p = paymentFreqString[user.paymentFrequency];
 
+      $("#rowMembershipFee").show();
       $("#membershipFeeFreq").html(p);
       $("#membershipFeeSubTotal").html("$" + user.membershipFeeSubtotal());
       $("#grandTotal").html("$" + user.grandTotal());
@@ -157,7 +152,7 @@
 
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 
-<form class="needs-validation" novalidate>
+<form class="needs-validation" method="POST" novalidate>
 
   <div class="alert alert-warning" role="alert">
     <h4 class="alert-heading">Membership Management</h4>
@@ -215,17 +210,6 @@
           </li>
           </ul>
           
-          <!-- Not needed for new members
-          <hr/>
-
-          <ul class="list-group">
-          <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" name="pauseMembership" name="pauseMembership" id="pauseMembership">
-            <label class="form-check-label" for="pauseMembership">Pause Membership</label>
-          </li>
-        </ul>
-        -->
-
       </div>
     </div>
 
@@ -236,7 +220,7 @@
 
             <ul class="list-group">
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="donationRadio" value="0" id="Donation0">
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="0" id="Donation0" checked>
                 <label class="form-check-label stretched-link" for="Donation0">No Thanks</label>
               </li>
               <li class="list-group-item">
@@ -271,7 +255,7 @@
 
         <ul class="list-group">
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="radio" name="payFreqRadio" value="1" id="paymentFreq1">
+            <input class="form-check-input me-1" type="radio" name="payFreqRadio" value="1" id="paymentFreq1" checked>
             <label class="form-check-label" for="paymentFreq1">Billed Monthly</label>
           </li>
           <li class="list-group-item">
@@ -295,7 +279,12 @@
   <div class="card" style="margin-bottom:50px;width:75%">
     <h6 class="card-header">Payment Information</h6>
     <div class="card-body">
-      <div class="card-js"></div>
+      <div class="card-js">
+        <input class="card-number my-custom-class" name="card-number">
+        <input class="expiry-month" name="expiry-month">
+        <input class="expiry-year" name="expiry-year">
+        <input class="cvc" name="cvc">
+      </div>
     </div>
     <div class="card-footer text-body-secondary">
       Membership payments are processed via the <a href="https://stripe.com/">Stripe.com</a> payment 
@@ -323,7 +312,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr id="rowMembershipFee">
               <td>Membership Fee</td>
               <td>${{ mf }}</td>
               <td id="membershipFeeFreq"></td>

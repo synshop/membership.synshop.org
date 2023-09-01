@@ -42,23 +42,27 @@
       paymentFrequency: 1,
       charterMemberCoupon: false,
       membershipFeeSubtotal: function () {
-        return (this.membershipFee * this.paymentFrequency)
+        return (this.membershipFee * this.paymentFrequency);
       },
       lockerFeeSubtotal: function () {
-        return (this.lockerFee * this.paymentFrequency)
+        return (this.lockerFee * this.paymentFrequency);
       },
       donationSubtotal: function () {
-        return (this.donationAmount * this.paymentFrequency)
+        return (this.donationAmount * this.paymentFrequency);
       },
       discountCouponSubtotal: function () {
         if (this.charterMemberCoupon == true) {
           return this.membershipFeeSubtotal() * .2
         } else {
           return 0;
-        }
+        };
       },
       grandTotal: function() {
-        return (this.membershipFeeSubtotal() + this.lockerFeeSubtotal() + this.donationSubtotal() + this.discountCouponSubtotal())
+        return (this.membershipFeeSubtotal() + 
+                this.lockerFeeSubtotal() + 
+                this.donationSubtotal() + 
+                this.discountCouponSubtotal()
+        );
       }
 
     };
@@ -194,7 +198,8 @@
 
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 
-<form class="needs-validation" novalidate>
+<form class="needs-validation" method="POST">
+  <input type="hidden" c="false" />
 
   <div class="alert alert-warning" role="alert">
     <h4 class="alert-heading">Membership Management</h4>
