@@ -11,7 +11,7 @@
   <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
   <link href="{{ url_for('static', filename='css/card-js.min.css') }}" rel="stylesheet">
-  <script src="{{ url_for('static', filename='js/jquery-1.12.4.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/card-js.min.js') }}"></script>
 
   <script language="javascript">
@@ -51,7 +51,6 @@
       grandTotal: function() {
         return (this.membershipFeeSubtotal() + this.lockerFeeSubtotal() + this.donationSubtotal())
       }
-
     };
 
     function update_summary() {
@@ -89,7 +88,7 @@
       user.discordId = $("#discordId").val();
     });
 
-    $("#lockerFee").on("change", function() {
+    $("#lockerFeeChk").on("change", function() {
       if ( $(this).prop("checked") == true) {
         user.lockerFee = user.defaultLockerFee;
       } else {
@@ -110,7 +109,18 @@
       update_summary();
     });
 
-  });
+    
+    /* For testing only
+    $("#card-number").val("4242424242424242");
+    $("#expiry-month").val("01");
+    $("#expiry-year").val("24");
+    $("#cvc").val("243");
+    $("#expiry-month").blur();
+    */
+
+    update_summary();
+
+  }); // End of document.ready
 
   </script>
 
@@ -152,19 +162,19 @@
 
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 
-<form class="needs-validation" method="POST" novalidate>
+<form class="needs-validation" method="POST">
+  <input type="hidden" name="email" value="{{ session.userinfo.email }}"/>
 
   <div class="alert alert-warning" role="alert">
-    <h4 class="alert-heading">Membership Management</h4>
+    <h4 class="alert-heading">Welcome to SYN Shop!</h4>
     <p>
-      Welcome to SYN Shop. Please fill out the information below.  
-      A payment type is not required if you choose to pause your membership. 
+      Please fill out the information below to set up your account.
     </p>
     <hr>
     <p class="mb-0">
       If you have any questions or need help with anything, 
       please email <a href="mailto:support@synshop.org">support@synshop.org</a> 
-      or reach out in the <a href="#">SYN Shop Discord</a>.
+      or reach out in the <a href="https://synshop.org/discord">SYN Shop Discord</a>.
     </p>
   </div>
 
@@ -184,10 +194,27 @@
       
       <div class="row g-3">
         <div class="col">
-          <input type="text" class="form-control input-sm" placeholder="Full Name" name="fullName" id="fullName" aria-label="First name">
+          <input 
+            type="text" 
+            class="form-control input-sm" 
+            placeholder="Full Name"
+            value=""
+            name="fullName" 
+            id="fullName" 
+            aria-label="First name" 
+            required />
+        </div>
+        <div class="invalid-feedback" id="invalidFullName">
+          Please provide your full name.
         </div>
         <div class="col">
-          <input type="text" class="form-control input-sm" placeholder="Discord ID (optional)" name="discordId" id="discordId" aria-label="Discord ID">
+          <input 
+            type="text" 
+            class="form-control input-sm" 
+            placeholder="Discord ID (optional)" 
+            name="discordId" 
+            id="discordId" 
+            aria-label="Discord ID" />
         </div>
       </div>
 
@@ -201,12 +228,12 @@
 
         <ul class="list-group">
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" name="membershipFee" id="membershipFee" checked disabled>
-            <label class="form-check-label" for="membershipFee">$50 - Membership Fee</label>
+            <input class="form-check-input me-1" type="checkbox" name="membershipFeeChk" id="membershipFeeChk" checked disabled>
+            <label class="form-check-label" for="membershipFeeChk">$50 - Membership Fee</label>
           </li>
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" name="lockerFee" id="lockerFee">
-            <label class="form-check-label" for="lockerFee">$10 - Optional Locker Fee</label>
+            <input class="form-check-input me-1" type="checkbox" name="lockerFeeChk" id="lockerFeeChk">
+            <label class="form-check-label" for="lockerFeeChk">$10 - Optional Locker Fee</label>
           </li>
           </ul>
           
@@ -279,11 +306,11 @@
   <div class="card" style="margin-bottom:50px;width:75%">
     <h6 class="card-header">Payment Information</h6>
     <div class="card-body">
-      <div class="card-js">
-        <input class="card-number my-custom-class" name="card-number">
-        <input class="expiry-month" name="expiry-month">
-        <input class="expiry-year" name="expiry-year">
-        <input class="cvc" name="cvc">
+      <div class="card-js"  data-capture-name="true">
+        <input class="card-number"  name="card-number"  id="card-number">
+        <input class="expiry-month" name="expiry-month" id="expiry-month">
+        <input class="expiry-year"  name="expiry-year"  id="expiry-year">
+        <input class="cvc"          name="cvc"          id="cvc">
       </div>
     </div>
     <div class="card-footer text-body-secondary">
@@ -342,8 +369,8 @@
       </div>
     </div>
 
-  <button type="submit" class="btn btn-lg btn-primary">Submit</button>
-  <button type="submit" class="btn btn-lg btn-secondary">Cancel</button>
+  <button type="submit" class="btn btn-lg btn-primary" name="btnSubmit" id="btnSubmit">Submit</button>
+  <button type="cancel" class="btn btn-lg btn-secondary" name="btnCancel" id="btnCancel">Cancel</button>
 </form>
 </div>
 

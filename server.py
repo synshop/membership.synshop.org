@@ -7,7 +7,7 @@ from authlib.integrations.base_client.errors import OAuthError
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from crypto import SettingsUtil, CryptoUtil
-from synshop import has_stripe_account
+from synshop import has_stripe_account, create_new_member
 
 app = Flask(__name__) 
 
@@ -82,6 +82,10 @@ def callback():
 
         if (action == "update" and has_stripe_account(email) == 1):
             return redirect(url_for("update_user"))
+        
+        if (action == "new" and has_stripe_account(email) == 1):
+            app.logger.info("This email address was found in Stripe, redirecting to /update...")
+            return redirect(url_for("update_user"))
         else:
             return redirect(url_for("new_user"))
 
@@ -90,7 +94,7 @@ def callback():
 
 @app.route("/login")
 def login():
-    redirect_uri=url_for("callback", s="existing", _external=True)
+    redirect_uri=url_for("callback", s="update", _external=True)
     return oauth.auth0.authorize_redirect(redirect_uri)
 
 @app.route("/logout")
@@ -106,20 +110,29 @@ def signup():
 @app.route("/new", methods=['GET', 'POST'])
 @login_required
 def new_user():
+
+    email = session["user"]["userinfo"]["email"]
+
+    if has_stripe_account(email) == 1:
+        app.logger.info("This email address was found in Stripe, redirecting to /update...")
+        return redirect(url_for("update_user")) 
+
     if request.method == 'GET':
         mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
         lf=app.config["NEW_USER_LOCKER_FEE"]
-        return render_template("new_user.html",session=session.get("user"),mf=mf,lf=lf)
+        return render_template("new_user.html", session=session.get("user"), mf=mf, lf=lf)
     else:
-        print(request.form)
-        return redirect(app.config['LOGOUT_REDIRECT_URL']) 
+        create_new_member(request.form.to_dict())
+        session.clear()
+        return render_template("welcome.html")
 
 @app.route("/update")
 @login_required
 def update_user():
     mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
     lf=app.config["NEW_USER_LOCKER_FEE"]
-    return render_template("update_user.html",session=session.get("user"),mf=mf,lf=lf)
+    return render_template("borked.html")
+    # return render_template("update_user.html",session=session.get("user"),mf=mf,lf=lf)
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True)
