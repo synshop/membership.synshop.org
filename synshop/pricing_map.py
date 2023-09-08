@@ -1,9 +1,16 @@
-freq_decode = {
-    "1"   : "monthly",
-    "3"   : "quarterly",
-    "6"   : "semiannually",
-    "12"  : "yearly"
-}
+def freq_decode(f):
+    x = {
+        "1"   : "monthly",
+        "3"   : "quarterly",
+        "6"   : "semiannually",
+        "12"  : "yearly"
+    }
+
+    return x[str(f)]
+
+def stripe_interval_decode(i=None,i_c=None):
+    if i == "month": return i_c
+    if i == "year" : return "12"
 
 membership_fees = {
     "paused"        : "price_0NnAEQhX2MNi0jZxhFu8Pk6T",
@@ -14,12 +21,16 @@ membership_fees = {
     "yearly"        : "price_0NiScBhX2MNi0jZxnJ0zhPup"
 }
 
+i_membership_fees = {v: k for k, v in membership_fees.items()}
+
 locker_fees = {
     "monthly"       : "price_0NbbTGhX2MNi0jZxa76MmUU1",
     "quarterly"     : "price_0NiS5uhX2MNi0jZxHGqqWXiT",
     "semiannually"  : "price_0NiS6LhX2MNi0jZxLKYQTHWJ",
     "yearly"        : "price_0NiS6bhX2MNi0jZx5U7S8G75",
 }
+
+i_locker_fees = {v: k for k, v in locker_fees.items()}
 
 donation_levels = {
     "monthly": {
@@ -51,3 +62,10 @@ donation_levels = {
         "50" : "price_0NiTR1hX2MNi0jZxXfKAwYay"
     }
 }
+
+def reverse_map_donation_level(payment_freq=None, price_id=None):
+
+    plucked_donation_levels = dict(donation_levels[payment_freq])
+    i_donation_levels = {v: k for k, v in plucked_donation_levels.items()}
+    
+    return i_donation_levels[price_id]

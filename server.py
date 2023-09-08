@@ -7,7 +7,7 @@ from authlib.integrations.base_client.errors import OAuthError
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from crypto import SettingsUtil, CryptoUtil
-from synshop import has_stripe_account, create_new_member
+from synshop import has_stripe_account, create_new_member, get_member_stripe_account
 
 app = Flask(__name__) 
 
@@ -80,14 +80,25 @@ def callback():
         action = request.args.get('s')
         email = token['userinfo']['email']
 
-        if (action == "update" and has_stripe_account(email) == 1):
-            return redirect(url_for("update_user"))
+        if action == "update":
+            
+            if has_stripe_account(email) == 1:
+                app.logger.info("This email address was found in Stripe, redirecting to /update...")
+                return redirect(url_for("update_user"))
+            else:
+                app.logger.info("This email address was not found in Stripe, redirecting to /new...")
+                return redirect(url_for("new_user"))
         
-        if (action == "new" and has_stripe_account(email) == 1):
-            app.logger.info("This email address was found in Stripe, redirecting to /update...")
-            return redirect(url_for("update_user"))
-        else:
-            return redirect(url_for("new_user"))
+        if action == "new":
+
+            if has_stripe_account(email) == 1:
+                app.logger.info("This email address was found in Stripe, redirecting to /update...")
+                return redirect(url_for("update_user"))
+            else:
+                app.logger.info("This email address was not found in Stripe, redirecting to /new...")
+                redirect(url_for("new_user"))
+        
+        return url_for("logout")
 
     except OAuthError:
         return render_template("validate.html")
@@ -123,7 +134,7 @@ def new_user():
         return render_template("new_user.html", session=session.get("user"), mf=mf, lf=lf)
     else:
         create_new_member(request.form.to_dict())
-        session.clear()
+        app.logger.info("New user has been created in Stripe...")
         return render_template("welcome.html")
 
 @app.route("/update")
@@ -131,8 +142,14 @@ def new_user():
 def update_user():
     mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
     lf=app.config["NEW_USER_LOCKER_FEE"]
-    return render_template("borked.html")
-    # return render_template("update_user.html",session=session.get("user"),mf=mf,lf=lf)
+
+    email = session["user"]["userinfo"]["email"]
+    member = get_member_stripe_account(email)
+    if request.method == 'GET':
+        return render_template("update_user.html",session=session.get("user"),mf=mf,lf=lf,member=member)
+        # return render_template("borked.html")
+    else:
+        pass
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True)

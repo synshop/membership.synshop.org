@@ -109,15 +109,6 @@
       update_summary();
     });
 
-    
-    /* For testing only
-    $("#card-number").val("4242424242424242");
-    $("#expiry-month").val("01");
-    $("#expiry-year").val("24");
-    $("#cvc").val("243");
-    $("#expiry-month").blur();
-    */
-
     update_summary();
 
   }); // End of document.ready
@@ -185,7 +176,7 @@
 
       <div class="row g-3" style="margin-bottom:15px;">
         <div class="col">
-          <h6 style="display:inline;margin-right:10px;padding:10px;">
+          <h6 style="display:inline;margin-right:10px;padding:10px;background-color: rgb(228, 228, 228);">
             {{ session.userinfo.email }}
           </h6> 
           (This is your login, so be sure to remember it)
@@ -197,7 +188,7 @@
           <input 
             type="text" 
             class="form-control input-sm" 
-            placeholder="Full Name"
+            placeholder="Full Name (required)"
             value=""
             name="fullName" 
             id="fullName" 
@@ -211,7 +202,7 @@
           <input 
             type="text" 
             class="form-control input-sm" 
-            placeholder="Discord ID (optional)" 
+            placeholder="Discord ID (optional but recommended)" 
             name="discordId" 
             id="discordId" 
             aria-label="Discord ID" />

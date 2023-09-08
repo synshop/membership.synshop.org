@@ -14,8 +14,10 @@
   <script src="{{ url_for('static', filename='js/jquery-1.12.4.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/card-js.min.js') }}"></script>
 
+   <!-- {{ member.email }} -->
+
   <script language="javascript">
-  
+ 
   $( document ).ready(function() {
 
     $("#rowMembershipFee").hide();
@@ -31,16 +33,19 @@
 
     const user = {
       email: "{{ session.userinfo.email }}",
-      fullName: "Bobby McGee",
-      discordId: "bobbyg",
+      fullName: "{{ member.full_name }}",
+      discordId: "{{ member.discord_id }}",
       defaultMembershipFee: {{ mf }},
       membershipFee: 0,
+      hasMembership: {{ member.membership_fee|lower }},
+      membershipType: "{{ member.membership_type }}",
       defaultLockerFee: {{ lf }},
       lockerFee: 0,
-      membershipIsPaused: false,
-      donationAmount: 0,
-      paymentFrequency: 1,
-      charterMemberCoupon: false,
+      hasLocker: {{ member.locker_fee|lower }},
+      membershipIsPaused: {{ member.is_paused|lower }},
+      donationAmount: {{ member.donation_amount }},
+      paymentFrequency: {{ member.payment_freq }},
+      charterMemberCoupon: {{ member.charter_member|lower }},
       membershipFeeSubtotal: function () {
         return (this.membershipFee * this.paymentFrequency);
       },
@@ -62,8 +67,7 @@
                 this.lockerFeeSubtotal() + 
                 this.donationSubtotal() + 
                 this.discountCouponSubtotal()
-        );
-      }
+        )}
 
     };
 
@@ -132,15 +136,24 @@
     });
 
     $("#pauseMembership").on("change", function() {
+
       if ( $(this).prop("checked") == true) {
         user.membershipFee = 0;
         user.lockerFee = 0;
         user.membershipIsPaused = true;
         user.donationAmount = 0;
         $("#membershipFee").prop("checked",false);
+        $("#membershipFee").prop("disabled",true);
+
         $("#lockerFee").prop("checked",false);
+        $("#lockerFee").prop("disabled",true);
+
         $("input[name='donationRadio']").removeAttr('checked');
         $("input[name='payFreqRadio']").removeAttr('checked');
+      } else {
+        user.membershipIsPaused = false;
+        $("#membershipFee").prop("disabled",false);
+        $("#lockerFee").prop("disabled",false);
       }
       update_summary();
     });
@@ -156,7 +169,58 @@
       update_summary();
     });
 
-  });
+    // Page Setup
+
+    $("#fullName").val(user.fullName);
+
+    if (user.discordId != "None") {
+      $("#discordId").val(user.discordId);
+    }
+ 
+    if (user.hasMembership) {
+      user.membershipFee = user.defaultMembershipFee;
+      $("#membershipFee").prop("checked",true);
+    }
+
+    if (user.hasLocker) {
+      user.lockerFee = user.defaultLockerFee;
+      $("#lockerFee").prop("checked",true);
+    }
+
+    if (user.membershipIsPaused) {
+      user.membershipFee = 0;
+      user.lockerFee = 0;
+      $("#membershipFee").prop("checked",false);
+      $("#membershipFee").prop("disabled",true);
+      $("#lockerFee").prop("checked",false);
+      $("#lockerFee").prop("disabled",true);
+      $("#pauseMembership").prop("checked",true);
+    }
+
+    if (user.membershipType == "free") {
+      user.membershipFee = 0;
+      user.lockerFee = 0;
+      $("#membershipFee").prop("checked",false);
+      $("#membershipFee").prop("disabled",true);
+      $("#lockerFee").prop("checked",false);
+      $("#lockerFee").prop("disabled",true);
+      $("#pauseMembership").prop("checked",false);
+      $("#pauseMembership").prop("disabled",true);
+      $('input[name=donationRadio]').attr("disabled",true);
+      $('input[name=payFreqRadio]').attr("disabled",true);
+    }
+
+    if (user.donationAmount > 0) {
+      $("#donation" + user.donationAmount).prop("checked", true);
+    }
+    
+    if (user.paymentFrequency > 0) {
+      $("#paymentFreq" + user.paymentFrequency).prop("checked", true);
+    }
+
+    update_summary();
+
+  }); // End of document.ready
 
   </script>
 
@@ -200,13 +264,10 @@
 
 <form class="needs-validation" method="POST">
   <input type="hidden" c="false" />
+  <input type="hidden" name="email" value="{{ session.userinfo.email }}"/>
 
   <div class="alert alert-warning" role="alert">
-    <h4 class="alert-heading">Membership Management</h4>
-    <p>
-      Let's update your membership...  
-      A payment type is not required if you choose to pause your membership. 
-    </p>
+    <h4 class="alert-heading">Update Your Membership</h4>
     <hr>
     <p class="mb-0">
       If you have any questions or need help with anything, 
@@ -215,6 +276,14 @@
     </p>
   </div>
 
+  {% if member.membership_type == 'free' %}
+  <div class="alert alert-primary d-flex align-items-center" role="alert">
+    <div>
+      <h3>You currently have a Free Membership, please reach out to the SYN Shop Board of Directors if you need to make changes.</h3>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- User Information -->
   <div class="card" style="margin-top:50px;margin-bottom:50px;">
     <h6 class="card-header">Member Information</h6>
@@ -222,7 +291,7 @@
 
       <div class="row g-3" style="margin-bottom:15px;">
         <div class="col">
-          <h6 style="display:inline;margin-right:10px;padding:10px;">
+          <h6 style="display:inline;margin-right:10px;padding:10px;background-color: rgb(228, 228, 228);">
             {{ session.userinfo.email }}
           </h6> 
           (This is your login, so be sure to remember it)
@@ -231,10 +300,27 @@
       
       <div class="row g-3">
         <div class="col">
-          <input type="text" class="form-control input-sm" placeholder="Full Name" name="fullName" id="fullName" aria-label="First name">
+          <input 
+            type="text" 
+            class="form-control input-sm" 
+            placeholder="Full Name (required)"
+            value=""
+            name="fullName" 
+            id="fullName" 
+            aria-label="First name" 
+            required />
+        </div>
+        <div class="invalid-feedback" id="invalidFullName">
+          Please provide your full name.
         </div>
         <div class="col">
-          <input type="text" class="form-control input-sm" placeholder="Discord ID (optional)" name="discordId" id="discordId" aria-label="Discord ID">
+          <input 
+            type="text" 
+            class="form-control input-sm" 
+            placeholder="Discord ID (optional but recommended)" 
+            name="discordId" 
+            id="discordId" 
+            aria-label="Discord ID" />
         </div>
       </div>
 
@@ -276,28 +362,28 @@
 
             <ul class="list-group">
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="donationRadio" value="0" id="Donation0">
-                <label class="form-check-label stretched-link" for="Donation0">No Thanks</label>
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="0" id="donation0">
+                <label class="form-check-label stretched-link" for="donation0">No Thanks</label>
               </li>
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="donationRadio" value="10" id="Donation10">
-                <label class="form-check-label stretched-link" for="Donation10">$10 / Month</label>
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="10" id="donation10">
+                <label class="form-check-label stretched-link" for="donation10">$10 / Month</label>
               </li>
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="donationRadio" value="20" id="Donation20">
-                <label class="form-check-label stretched-link" for="Donation20">$20 / Month</label>
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="20" id="donation20">
+                <label class="form-check-label stretched-link" for="donation20">$20 / Month</label>
               </li>
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="donationRadio" value="30" id="Donation30">
-                <label class="form-check-label stretched-link" for="Donation30">$30 / Month</label>
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="30" id="donation30">
+                <label class="form-check-label stretched-link" for="donation30">$30 / Month</label>
               </li>
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="donationRadio" value="40" id="Donation40">
-                <label class="form-check-label stretched-link" for="Donation40">$40 / Month</label>
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="40" id="donation40">
+                <label class="form-check-label stretched-link" for="donation40">$40 / Month</label>
               </li>
               <li class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="donationRadio" value="50" id="Donation50">
-                <label class="form-check-label stretched-link" for="Donation50">$50 / Month</label>
+                <input class="form-check-input me-1" type="radio" name="donationRadio" value="50" id="donation50">
+                <label class="form-check-label stretched-link" for="donation50">$50 / Month</label>
               </li>
             </ul>
     
@@ -335,7 +421,7 @@
   <div class="card" style="margin-bottom:50px;width:75%">
     <h6 class="card-header">Payment Information</h6>
     <div class="card-body">
-      <div class="card-js"></div>
+  
     </div>
     <div class="card-footer text-body-secondary">
       Membership payments are processed via the <a href="https://stripe.com/">Stripe.com</a> payment 
@@ -399,8 +485,8 @@
       </div>
     </div>
 
-  <button type="submit" class="btn btn-lg btn-primary">Submit</button>
-  <button type="submit" class="btn btn-lg btn-secondary">Cancel</button>
+    <button type="submit" class="btn btn-lg btn-primary" name="btnSubmit" id="btnSubmit">Submit</button>
+    <button type="cancel" class="btn btn-lg btn-secondary" name="btnCancel" id="btnCancel">Cancel</button>
 </form>
 </div>
 
