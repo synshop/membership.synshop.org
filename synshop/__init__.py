@@ -11,7 +11,6 @@ except Exception as e:
 
 # Load Configuration Variables
 try:
-    # RUN_MODE = 'development'
     ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get()
     stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN, ENCRYPTION_KEY)
     stripe.api_version = config.STRIPE_VERSION
