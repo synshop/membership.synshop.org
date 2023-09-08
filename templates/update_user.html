@@ -120,16 +120,21 @@
     });
 
     $("#membershipFee").on("change", function() {
+
       if ( $(this).prop("checked") == true) {
         user.membershipFee = user.defaultMembershipFee;
       } else {
+        $("#lockerFee").prop("checked",false);
         user.membershipFee = 0;
       }
+
       update_summary();
     });
 
     $("#lockerFee").on("change", function() {
       if ( $(this).prop("checked") == true) {
+        $("#membershipFee").prop("checked",true);
+        user.membershipFee = user.defaultMembershipFee;
         user.lockerFee = user.defaultLockerFee;
       } else {
         user.lockerFee = 0;
@@ -156,11 +161,11 @@
         user.membershipIsPaused = false;
         $("#membershipFee").prop("disabled",false);
         $("#lockerFee").prop("disabled",false);
+        $("#paymentFreq" + user.paymentFrequency).prop("checked", true);
       }
       update_summary();
     });
 
-    
     $("input[name='donationRadio']").click(function() {
       user.donationAmount = $("input[name='donationRadio']:checked").val() * 1;
       update_summary();
@@ -171,7 +176,7 @@
       update_summary();
     });
 
-    // Page Setup
+    // Page Setup after load
 
     $("#fullName").val(user.fullName);
 
