@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SYN Shop Membership Management</title>
-    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='images/favicon.ico') }}" rel="icon" >
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
-
-    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.min.js') }}"></script> 
+    <noscript>this site requires javascript for both membership.synshop.net and synshop.auth0.com</noscript>
+    <script src="{{ url_for('static', filename='js/main.min.js') }}"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
   </head>
 
   <body class="layout--splash">
@@ -64,9 +64,15 @@
     </div>
   </div>
 
-    <div class="container-fluid" style="width:75%">
-        <h3>Welcome to SYN Shop!  This page needs more content</h3>
+  <div id="main" role="main">
+    <div class="page__inner-wrap">
+    <section class="page__content e-content" itemprop="text">
+
+      <h1 id="new-members">Welcome to SYN Shop!</h1>
+      <p>This page needs more content!</p>
     </div>
+  </div>
 </div>
+
 </body>
 </html>
