@@ -41,15 +41,15 @@
       currentPaymentMethod: "{{ member.payment_method }}",
       defaultMembershipFee: {{ mf }},
       membershipFee: 0,
-      hasMembership: {{ member.membership_fee|lower }},
+      hasMembership: {{ member.membership_fee | lower }},
       membershipType: "{{ member.membership_type }}",
       defaultLockerFee: {{ lf }},
       lockerFee: 0,
-      hasLocker: {{ member.locker_fee|lower }},
-      membershipIsPaused: {{ member.is_paused|lower }},
+      hasLocker: {{ member.locker_fee | lower }},
+      membershipIsPaused: {{ member.is_paused | lower }},
       donationAmount: {{ member.donation_amount }},
       paymentFrequency: {{ member.payment_freq }},
-      charterMemberCoupon: {{ member.charter_member|lower }},
+      charterMemberCoupon: {{ member.charter_member | lower }},
       membershipFeeSubtotal: function () {
         return (this.membershipFee * this.paymentFrequency);
       },
@@ -445,7 +445,7 @@
           <input 
             type="text" 
             class="form-control input-sm"
-            value="{{ member.brand|upper }}"
+            value="{{ member.payment_brand | upper }}"
             name="brand" 
             id="brand" 
             disabled />

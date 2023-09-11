@@ -78,6 +78,10 @@ def get_member_stripe_account(email=None):
         "full_name"             : None,
         "discord_id"            : None,
         "payment_method"        : None,
+        "payment_brand"         : None,
+        "exp_month"             : 0,
+        "exp_year"              : 0,
+        "last4"                 : 0,
         "membership_fee"        : False,
         "membership_type"       : "standard",
         "locker_fee"            : False,
@@ -108,7 +112,7 @@ def get_member_stripe_account(email=None):
     
     x = stripe.Customer.retrieve_payment_method(member["stripe_id"],member["payment_method"])
     
-    member["brand"] = x["card"]["brand"]
+    member["payment_brand"] = x["card"]["brand"]
     member["exp_month"] = x["card"]["exp_month"]
     member["exp_year"] = x["card"]["exp_year"]
     member["last4"] = x["card"]["last4"]
