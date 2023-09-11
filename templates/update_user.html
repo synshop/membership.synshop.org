@@ -230,6 +230,7 @@
     $("#cardDelete").click(function() {
       console.log("deleting card " + user.currentPaymentMethod )
       $("#deleteCurrentPaymentMethod").val("True");
+      $("#paymentMethodHeader").html("Payment Information - Add New Payment Method");
       $("#currentPaymentMethodTable").hide();
       $("#card-number").attr("required","required")
       $("#newPaymentMethodTable").show();
@@ -436,7 +437,7 @@
 
   <!-- Payment Information -->
   <div class="card" style="margin-bottom:50px;width:75%">
-    <h6 class="card-header">Payment Information</h6>
+    <h6 class="card-header" id="paymentMethodHeader">Payment Information - Current Payment Method</h6>
     <div class="card-body">
 
       <div class="row g-3" id="currentPaymentMethodTable">
@@ -447,7 +448,7 @@
             value="{{ member.brand|upper }}"
             name="brand" 
             id="brand" 
-            readonly />
+            disabled />
         </div>
         <div class="col">
           <input 
@@ -486,6 +487,9 @@
       
     </div>
     <div class="card-footer text-body-secondary">
+      If you need to update your payment method, please delete your existing card and enter your new card 
+      number, expiration date, and cvc.
+      <hr/>
       Membership payments are processed via the <a href="https://stripe.com/">Stripe.com</a> payment 
       processing system and <span style="font-weight: bold;">your full credit card information is never 
       stored on the SYN Shop servers</span>.  Stripe maintains full audited PCI compliance and you can 
