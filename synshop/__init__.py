@@ -64,7 +64,7 @@ def create_new_member(user=None):
             customer = sc.id,
             items = build_subscription_plan(locker_fee,donation_amount,payment_freq)
         )
-             
+
         return True
     except Exception as e:
         print(e)
@@ -105,6 +105,13 @@ def get_member_stripe_account(email=None):
     member["donation_amount"] = subs["donation_amount"]
     member["payment_freq"] = subs["payment_freq"]
     member["is_paused"] = subs["is_paused"]
+    
+    x = stripe.Customer.retrieve_payment_method(member["stripe_id"],member["payment_method"])
+    
+    member["brand"] = x["card"]["brand"]
+    member["exp_month"] = x["card"]["exp_month"]
+    member["exp_year"] = x["card"]["exp_year"]
+    member["last4"] = x["card"]["last4"]
 
     return member
 

@@ -22,11 +22,12 @@
  
   $( document ).ready(function() {
 
+    $("#newPaymentMethodTable").hide();
     $("#rowMembershipFee").hide();
     $("#rowLockerFee").hide();
     $("#rowDonation").hide();
     $("#rowCoupon").hide();
-    
+
     let paymentFreqString = {};
     paymentFreqString[1] = "Every Month";
     paymentFreqString[3] = "Every 3 Months";
@@ -37,6 +38,7 @@
       email: "{{ session.userinfo.email }}",
       fullName: "{{ member.full_name }}",
       discordId: "{{ member.discord_id }}",
+      currentPaymentMethod: "{{ member.payment_method }}",
       defaultMembershipFee: {{ mf }},
       membershipFee: 0,
       hasMembership: {{ member.membership_fee|lower }},
@@ -225,6 +227,14 @@
       $("#paymentFreq" + user.paymentFrequency).prop("checked", true);
     }
 
+    $("#cardDelete").click(function() {
+      console.log("deleting card " + user.currentPaymentMethod )
+      $("#deleteCurrentPaymentMethod").val("True");
+      $("#currentPaymentMethodTable").hide();
+      $("#card-number").attr("required","required")
+      $("#newPaymentMethodTable").show();
+    });
+
     update_summary();
 
   }); // End of document.ready
@@ -270,8 +280,8 @@
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 
 <form class="needs-validation" method="POST">
-  <input type="hidden" c="false" />
   <input type="hidden" name="email" value="{{ session.userinfo.email }}"/>
+  <input type="hidden" name="deleteCurrentPaymentMethod" id="deleteCurrentPaymentMethod" value="False" />
 
   <div class="alert alert-warning" role="alert">
     <h4 class="alert-heading">Update Your Membership</h4>
@@ -428,7 +438,52 @@
   <div class="card" style="margin-bottom:50px;width:75%">
     <h6 class="card-header">Payment Information</h6>
     <div class="card-body">
-  
+
+      <div class="row g-3" id="currentPaymentMethodTable">
+        <div class="col">
+          <input 
+            type="text" 
+            class="form-control input-sm"
+            value="{{ member.brand|upper }}"
+            name="brand" 
+            id="brand" 
+            readonly />
+        </div>
+        <div class="col">
+          <input 
+            type="text" 
+            class="form-control input-sm"
+            value="{{ member.last4 }}"
+            name="last4" 
+            id="last4" 
+            disabled />
+        </div>        
+        <div class="col">
+          <input 
+            type="text" 
+            class="form-control input-sm" 
+            value="{{ member.exp_month }} / {{ member.exp_year }}"
+            name="expDate" 
+            id="expDate" 
+            disabled />
+        </div>
+        <div class="col">
+          <input 
+            type="button" 
+            class="btn btn-danger" 
+            value="Delete Card?"
+            name="cardDelete" 
+            id="cardDelete" />
+        </div>
+      </div>
+
+      <div class="card-js"  data-capture-name="true" id="newPaymentMethodTable">
+        <input class="card-number"  name="card-number"  id="card-number">
+        <input class="expiry-month" name="expiry-month" id="expiry-month">
+        <input class="expiry-year"  name="expiry-year"  id="expiry-year">
+        <input class="cvc"          name="cvc"          id="cvc">
+      </div>
+      
     </div>
     <div class="card-footer text-body-secondary">
       Membership payments are processed via the <a href="https://stripe.com/">Stripe.com</a> payment 

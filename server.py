@@ -137,7 +137,7 @@ def new_user():
         app.logger.info("New user has been created in Stripe...")
         return render_template("welcome.html")
 
-@app.route("/update")
+@app.route("/update", methods=['GET', 'POST'])
 @login_required
 def update_user():
     mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
@@ -145,11 +145,11 @@ def update_user():
 
     email = session["user"]["userinfo"]["email"]
     member = get_member_stripe_account(email)
+
     if request.method == 'GET':
-        return render_template("update_user.html",session=session.get("user"),mf=mf,lf=lf,member=member)
-        # return render_template("borked.html")
+        return render_template("update_user.html", session=session.get("user"), mf=mf, lf=lf, member=member)
     else:
-        pass
+        return render_template("borked.html")
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True)
