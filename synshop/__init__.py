@@ -214,7 +214,6 @@ def update_member_stripe_account(user=None):
         "full_name"                 : None,
         "discord_id"                : None,
         "current_payment_method"    : None,
-        "d_current_payment_method"  : False,
         "is_paused"                 : False,
         "locker_fee"                : False,
         "donation_amount"           : 0,
@@ -255,10 +254,10 @@ def update_member_stripe_account(user=None):
 
     if user["deleteCurrentPaymentMethod"] == "1":
 
-        # If the member adds a new card:
+        # Member adds a new card:
         #   1) create a new PaymentMethod
-        #   2) attach it to the Stripe Customer ID
-        #   3) set new PaymentMethod to Customer default
+        #   2) attach it to the Stripe Customer
+        #   3) set new PaymentMethod as Customer default
         #   4) detach the old PaymentMethod
 
         real_card = {
