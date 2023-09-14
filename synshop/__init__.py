@@ -25,6 +25,13 @@ def has_stripe_account(email=None):
     sr=stripe.Customer.search(query='email: "' + email + '"', limit=1)
     return len(sr['data'])
 
+def is_charter_member(c=None):
+    
+    if c["discount"] and "coupon" in c['discount']:
+        return True
+    else:
+        return False
+    
 def create_new_member(user=None):
 
     locker_fee = False
@@ -101,7 +108,7 @@ def get_member_stripe_account(email=None):
     if "discord_id" in c['metadata']:
         member["discord_id"] = c['metadata']['discord_id']
 
-    subs = get_subscription_plan(c)
+    subs = get_current_subscription_plan(c)
 
     member["membership_fee"] = subs["membership_fee"]
     member["membership_type"] = subs["membership_type"]
@@ -145,7 +152,7 @@ def build_subscription_plan(locker_fee=False,donation_amount=0,payment_freq=1,is
     
     return s_list
 
-def get_subscription_plan(c=None):
+def get_current_subscription_plan(c=None):
 
     subscriptions = {
         "membership_fee"    : False,
@@ -198,13 +205,6 @@ def cancel_current_subscription_plan(c=None):
             stripe.Subscription.delete(s.id)
     except Exception as e:
         pass
-
-def is_charter_member(c=None):
-    
-    if c["discount"] and "coupon" in c['discount']:
-        return True
-    else:
-        return False
 
 def update_member_stripe_account(user=None):
 
@@ -310,23 +310,4 @@ def update_member_stripe_account(user=None):
     
 def delete_membership():
     pass
-
-def test_get_payment_stuff():
-
-    stripe_id = "cus_OdITRJ4RjgqW0c"
-
-    # c = stripe.Customer.retrieve(stripe_id)
-    # print(c)
-    
-    pm_visa = "pm_card_visa"
-    pm_mc = "pm_card_mastercard"
-
-    x = stripe.PaymentMethod.attach(pm_mc,customer=stripe_id)
-
-    stripe.Customer.modify(
-        stripe_id,
-        invoice_settings = {"default_payment_method" : x}
-    )
-
-    stripe.PaymentMethod.detach("pm_0Nq2rAhX2MNi0jZxBzdhiQWm")
     
