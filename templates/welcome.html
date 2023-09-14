@@ -6,9 +6,12 @@
     <title>SYN Shop Membership Management</title>
     <link href="{{ url_for('static', filename='images/favicon.ico') }}" rel="icon" >
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <!-- <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet"> -->
+    
     <noscript>this site requires javascript for both membership.synshop.net and synshop.auth0.com</noscript>
     <script src="{{ url_for('static', filename='js/main.min.js') }}"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
+     
   </head>
 
   <body class="layout--splash">
@@ -32,19 +35,23 @@
           <span class="site-subtitle">The Las Vegas Hackerspace</span>
         </a>
         <ul class="visible-links"><li class="masthead__menu-item">
-              <a href="/">Home</a>
-            </li><li class="masthead__menu-item">
-              <a href="/about/">About</a>
-            </li><li class="masthead__menu-item">
-              <a href="/hours/">Hours</a>
-            </li><li class="masthead__menu-item">
-              <a href="/equipment/">Equipment</a>
-            </li><li class="masthead__menu-item">
-              <a href="/events/">Events</a>
-            </li><li class="masthead__menu-item">
-              <a href="/contact/">Contact</a>
-            </li>
-          </ul>
+          <a href="{{ root_server_url }}/hours/">Hours</a>
+        </li><li class="masthead__menu-item">
+          <a href="{{ root_server_url }}/events/">Events</a>
+        </li><li class="masthead__menu-item">
+          <a href="{{ root_server_url }}/equipment/">Equipment</a>
+        </li><li class="masthead__menu-item">
+          <a href="https://rtfm.synshop.org/">RTFM</a>
+        </li><li class="masthead__menu-item">
+          <a href="{{ root_server_url }}/about/">About</a>
+        </li>
+        <li class="masthead__menu-item">
+          <a href="{{ root_server_url }}/contact/">Contact</a>
+        </li>
+        <li class="masthead__menu-item">
+          <a href="#" style="pointer-events: none">Membership</a>
+        </li>
+      </ul>
         
         <button class="greedy-nav__toggle hidden" type="button">
           <span class="visually-hidden">Toggle menu</span>
@@ -65,14 +72,120 @@
   </div>
 
   <div id="main" role="main">
-    <div class="page__inner-wrap">
-    <section class="page__content e-content" itemprop="text">
+  
 
-      <h1 id="new-members">Welcome to SYN Shop!</h1>
-      <p>This page needs more content!</p>
-    </div>
+
+    <article class="page h-entry" itemscope itemtype="https://schema.org/CreativeWork">
+      <meta itemprop="headline" content="Shop Membership">
+      
+      
+      
+  
+      <div class="page__inner-wrap">
+        
+  
+        <section class="page__content e-content" itemprop="text">
+          
+  <div class="alert alert-warning">
+    <p>Thank you for signing up for a membership to SYN Shop!</p>
+    
+    <p>Please read through the membership guidelines below and let us know if you have
+      any questions.
+    </p>
   </div>
-</div>
+  
+  <h4 id="regular-memberships">Regular Memberships</h4>  
+  <p>You must complete a very quick and to-the-point Tool Certification (TC) before you can operate the bigger / more expensive equipment on your own. Our goal isn’t to be the mean and grumpy shop teacher, but we want to make sure that you aren’t going to damage the tool or hurt yourself. We have designed TCs to give you a reference on how to operate the tool safely and properly.</p>
+  
+  <p><mark><b>Members must also follow our first rule, "Don't be a jerk"</b></mark> as well the others we have <a href="{{ root_server_url }}/assets/pdf/SYN_Shop_Rules_v3_2020-08-12.pdf">published here</a>.  Furthermore, the shop <a href="{{ root_server_url }}/assets/pdf/SYN_Shop_Bylaws_-_2020-02-01.pdf">has bylaws</a> which govern how we operate.</p>
+  
+  <h4 id="vetted-memberships">Vetted Memberships</h4>
+  <p>Once you have be a member of SYN Shop for a while and feel like you are really contributing to the space, you can apply for Vetted Membership status. Vetted Membership status gives you access to the shop 24/7 in addition to the benefits of being a Regular Member.</p>
+  
+  <p>To become a vetted member, your application will be reviewed by the board of directors for approval. The board would love to give everyone vetted membership immediately, but we want to make sure you are going to help protect the reputation of SYN Shop and be super passionate about building an awesome community of Makers.</p>
+  
+  <h4 id="drop-in-memberships">Drop-in Memberships</h4>
+  <p>We don’t have drop-in memberships at this time, but we are always willing to give a tour of the space during normal operating hours. Classes are always open to the public.</p>
+  
+  <h4 id="collaboration-with-non-syn-shop-members">Collaboration with Non SYN Shop Members</h4>
+  <p>Hey, we know that from time to time you will be working on a project that involves non SYN Shop members. When doing so, you are welcome to host up to two guests. We do ask that they consider giving a general donation to SYN Shop (or become members) if they are going to be using the space a considerable amount.</p>
+  
+  <h4 id="liability-wavier">Liability Wavier</h4>
+  <p>Please print, sign and return <a href="{{ root_server_url }}/assets/pdf/SYN_Shop_Liability_Waiver_Members.pdf">this waiver to SYN Shop</a>.  You can submit it by either emailing a scanned copy to <a href="mailto:info@synshop.org">info@synshop.org</a> or bring it down to the shop and we’ll file it away for you.</p>
+  
+
+  <h4 id="hours-of-operation">Hours of Operation</h4>
+  <p>Please see the <a href="{{ root_server_url }}/hours">hours page</a> for more details.</p>
+  
+  <h4 id="lockers">Lockers</h4>
+  <p>We have lockers available on a first come / first serve basis and cost an additional $10/mo.</p>
+  
+          
+        </section>
+  
+        <footer class="page__meta">
+        
+  
+        </footer>
+        
+      </div>
+  
+      
+    </article>
+  
+    
+    
+  </div>
+  
+      </div>
+  
+      
+  
+      <div id="footer" class="page__footer">
+        <footer>
+          <!-- start custom footer snippets -->
+  
+  <!-- end custom footer snippets -->
+          <div class="page__footer-follow">
+    <ul class="social-icons">
+      
+        <li><strong>Follow:</strong></li>
+      
+  
+      
+        
+          
+            <li><a href="https://synshop.org/discord" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-discord" aria-hidden="true"></i> Discord</a></li>
+          
+        
+          
+            <li><a href="https://twitter.com/synshop" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-twitter-square" aria-hidden="true"></i> Twitter</a></li>
+          
+        
+          
+            <li><a href="https://www.facebook.com/synshop/" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-facebook-square" aria-hidden="true"></i> Facebook</a></li>
+          
+        
+          
+            <li><a href="https://github.com/synshop" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+          
+        
+          
+        
+          
+            <li><a href="https://www.instagram.com/synshoplv/" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-instagram" aria-hidden="true"></i> Instagram</a></li>
+          
+        
+      
+  
+      
+    </ul>
+  </div>
+  
+  <div class="page__footer-copyright">&copy; 2023 SYN Shop. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+  
+        </footer>
+      </div>  
 
 </body>
 </html>

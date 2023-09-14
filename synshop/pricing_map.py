@@ -50,10 +50,12 @@ donation_levels = {
 
 def freq_decode(f):
     x = {
-        "1"   : "monthly",
-        "3"   : "quarterly",
-        "6"   : "semiannually",
-        "12"  : "yearly"
+        "99"    : "paused",
+        "0"     : "free",
+        "1"     : "monthly",
+        "3"     : "quarterly",
+        "6"     : "semiannually",
+        "12"    : "yearly"
     }
 
     return x[str(f)]

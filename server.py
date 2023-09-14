@@ -5,9 +5,9 @@ import json, logging
 from authlib.integrations.flask_client import OAuth
 from authlib.integrations.base_client.errors import OAuthError
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, redirect, render_template, request, session, url_for, flash
 from crypto import SettingsUtil, CryptoUtil
-from synshop import has_stripe_account, create_new_member, get_member_stripe_account
+from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account
 
 app = Flask(__name__) 
 
@@ -23,6 +23,7 @@ app.config['AUTH0_CLIENT_ID'] = config.AUTH0_CLIENT_ID
 app.config['AUTH0_DOMAIN'] = config.AUTH0_DOMAIN
 app.config['LOG_FILE'] = config.LOG_FILE
 app.config['LOGOUT_REDIRECT_URL'] = config.LOGOUT_REDIRECT_URL
+app.config['ROOT_SERVER_URL'] = config.ROOT_SERVER_URL
 app.config['NEW_USER_MEMBERSHIP_FEE'] = config.NEW_USER_MEMBERSHIP_FEE
 app.config['NEW_USER_LOCKER_FEE'] = config.NEW_USER_LOCKER_FEE
 
@@ -70,7 +71,7 @@ oauth.register(
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", root_server_url=app.config['ROOT_SERVER_URL'])
 
 @app.route("/callback", methods=["GET", "POST"])
 def callback():
@@ -135,7 +136,7 @@ def new_user():
     else:
         create_new_member(request.form.to_dict())
         app.logger.info("New user has been created in Stripe...")
-        return render_template("welcome.html")
+        return redirect(url_for("welcome_user"))
 
 @app.route("/update", methods=['GET', 'POST'])
 @login_required
@@ -144,12 +145,26 @@ def update_user():
     lf=app.config["NEW_USER_LOCKER_FEE"]
 
     email = session["user"]["userinfo"]["email"]
-    member = get_member_stripe_account(email)
-
+    
     if request.method == 'GET':
-        return render_template("update_user.html", session=session.get("user"), mf=mf, lf=lf, member=member)
+        app.logger.info("Fetching user info from Stripe for /update...")
     else:
-        return render_template("borked.html")
+        app.logger.info("Updating user info in Stripe...")
+        print(update_member_stripe_account(request.form.to_dict()))
+        flash("Your information has been updated successfully")
+
+    member = get_member_stripe_account(email)
+    return render_template(
+        "update_user.html", 
+        session=session.get("user"), 
+        mf=mf, lf=lf, 
+        member=member,
+        root_server_url=app.config['ROOT_SERVER_URL'])
+
+@app.route("/welcome", methods=['GET'])
+@login_required
+def welcome_user():
+    return render_template("welcome.html", root_server_url=app.config['ROOT_SERVER_URL'])
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8000, debug=True)

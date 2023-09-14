@@ -13,7 +13,8 @@
   <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
   <link href="{{ url_for('static', filename='css/card-js.min.css') }}" rel="stylesheet">
-  <script src="{{ url_for('static', filename='js/jquery-1.12.4.min.js') }}"></script>
+  <!-- <script src="{{ url_for('static', filename='js/jquery-1.12.4.min.js') }}"></script> -->
+  <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/card-js.min.js') }}"></script>
 
    <!-- {{ member.email }} -->
@@ -21,6 +22,8 @@
   <script language="javascript">
  
   $( document ).ready(function() {
+
+    $("#update_notice").hide()
 
     $("#newPaymentMethodTable").hide();
     $("#rowMembershipFee").hide();
@@ -123,6 +126,8 @@
 
     $("#membershipFee").on("change", function() {
 
+      $("#pageIsDirty").val(1);
+
       if ( $(this).prop("checked") == true) {
         user.membershipFee = user.defaultMembershipFee;
       } else {
@@ -134,6 +139,9 @@
     });
 
     $("#lockerFee").on("change", function() {
+
+      $("#pageIsDirty").val(1);
+
       if ( $(this).prop("checked") == true) {
         $("#membershipFee").prop("checked",true);
         user.membershipFee = user.defaultMembershipFee;
@@ -145,6 +153,8 @@
     });
 
     $("#pauseMembership").on("change", function() {
+
+      $("#pageIsDirty").val(1);
 
       if ( $(this).prop("checked") == true) {
         user.membershipFee = 0;
@@ -169,18 +179,22 @@
     });
 
     $("input[name='donationRadio']").click(function() {
+      $("#pageIsDirty").val(1);
       user.donationAmount = $("input[name='donationRadio']:checked").val() * 1;
       update_summary();
     });
 
     $("input[name='payFreqRadio']").click(function() {
+      $("#pageIsDirty").val(1);
       user.paymentFrequency = $("input[name='payFreqRadio']:checked").val() * 1;
       update_summary();
     });
 
-    // Page Setup after load
+    // Set all of the FORM elements after load
 
     $("#fullName").val(user.fullName);
+    $("#paymentFreq" + user.paymentFrequency).prop("checked", true);
+    $("#donation" + user.donationAmount).prop("checked", true);
 
     if (user.discordId != "None") {
       $("#discordId").val(user.discordId);
@@ -219,17 +233,9 @@
       $('input[name=payFreqRadio]').attr("disabled",true);
     }
 
-    if (user.donationAmount > 0) {
-      $("#donation" + user.donationAmount).prop("checked", true);
-    }
-    
-    if (user.paymentFrequency > 0) {
-      $("#paymentFreq" + user.paymentFrequency).prop("checked", true);
-    }
-
     $("#cardDelete").click(function() {
       console.log("deleting card " + user.currentPaymentMethod )
-      $("#deleteCurrentPaymentMethod").val("True");
+      $("#deleteCurrentPaymentMethod").val("1");
       $("#paymentMethodHeader").html("Payment Information - Add New Payment Method");
       $("#currentPaymentMethodTable").hide();
       $("#card-number").attr("required","required")
@@ -237,6 +243,19 @@
     });
 
     update_summary();
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+
+      // $("#notice").hide();
+      $("#update_notice").show();
+
+      $("#update_notice").fadeTo(5000, 500).slideUp(500, function(){
+        $("#update_notice").slideUp(500);
+      });
+      
+      {% endif %}
+    {% endwith %}
 
   }); // End of document.ready
 
@@ -252,19 +271,22 @@
     <div class="collapse navbar-collapse">
       <ul class="navbar-nav">
         <li class="nav-item">
-          <a class="nav-link" href="#">About</a>
+          <a class="nav-link" href="{{ root_server_url }}/hours">Hours</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">Hours</a>
+          <a class="nav-link" href="{{ root_server_url }}/events">Events</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">Equipment</a>
+          <a class="nav-link" href="{{ root_server_url }}/equipment">Equipment</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">Events</a>
+          <a class="nav-link" href="https://rtfm.synshop.org">RTFM</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">Contact</a>
+          <a class="nav-link" href="{{ root_server_url }}/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ root_server_url }}/contact">Contact</a>
         </li>
       </ul>
     </div>
@@ -282,9 +304,12 @@
 
 <form class="needs-validation" method="POST">
   <input type="hidden" name="email" value="{{ session.userinfo.email }}"/>
-  <input type="hidden" name="deleteCurrentPaymentMethod" id="deleteCurrentPaymentMethod" value="False" />
+  <input type="hidden" name="stripeId" value="{{ member.stripe_id }}"/>
+  <input type="hidden" name="currentPaymentMethod" value="{{ member.payment_method }}" />
+  <input type="hidden" name="deleteCurrentPaymentMethod" id="deleteCurrentPaymentMethod" value="0"/>
+  <input type="hidden" name="pageIsDirty" id="pageIsDirty" value="0"/>
 
-  <div class="alert alert-warning" role="alert">
+  <div class="alert alert-warning" role="alert" name="notice" id="notice">
     <h4 class="alert-heading">Update Your Membership</h4>
     <hr>
     <p class="mb-0">
@@ -294,10 +319,17 @@
     </p>
   </div>
 
+  <div class="alert alert-primary" role="alert" name="update_notice" id="update_notice" style="margin-top:50px;">
+    <strong>Your membership information has been updated...</strong>
+  </div>
+
   {% if member.membership_type == 'free' %}
   <div class="alert alert-primary d-flex align-items-center" role="alert">
     <div>
-      <h3>You currently have a Free Membership, please reach out to the SYN Shop Board of Directors if you need to make changes.</h3>
+      <h3>
+        You currently have a Free Membership, please reach out to the SYN Shop 
+        Board of Directors if you need to make changes.
+      </h3>
     </div>
   </div>
   {% endif %}
