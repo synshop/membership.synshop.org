@@ -1,6 +1,8 @@
-import stripe, time
+import stripe, time, logging
 from crypto import SettingsUtil, CryptoUtil
 import synshop.pricing_map as pricing
+
+log = logging.getLogger('server.app')
 
 # Load Configuration Variables
 try:
@@ -74,7 +76,7 @@ def create_new_member(user=None):
 
         return True
     except Exception as e:
-        print(e)
+        log.info(e)
         return False
 
 def get_member_stripe_account(email=None):
@@ -193,6 +195,7 @@ def get_current_subscription_plan(c=None):
             
     except IndexError:
         # The member does not have an active subscription
+        log.info("The member does not have an active subscription")
         pass
 
     return subscriptions
@@ -204,6 +207,7 @@ def cancel_current_subscription_plan(c=None):
             print("canceling current subscriptions...")
             stripe.Subscription.delete(s.id)
     except Exception as e:
+        log.info(e)
         pass
 
 def update_member_stripe_account(user=None):
@@ -250,7 +254,7 @@ def update_member_stripe_account(user=None):
             metadata = {'discord_id': member["discord_id"]}
         )
     except Exception as e:
-        print("line 255 " + str(e))
+        log.info(e)
 
     if user["deleteCurrentPaymentMethod"] == "1":
 
@@ -284,7 +288,7 @@ def update_member_stripe_account(user=None):
             stripe.PaymentMethod.detach(member["current_payment_method"])
 
         except Exception as e:
-            print("line 289 " + str(e))
+            log.info(e)
 
     # Update Subscriptions if necessary
     if member["page_is_dirty"] == "1":
@@ -305,8 +309,8 @@ def update_member_stripe_account(user=None):
             )
 
         except Exception as e:
-            print("line 311 " + str(e))
+            log.info(e)
     
 def delete_membership():
-    pass
+    log.info("Calling delete_memebership()")
     

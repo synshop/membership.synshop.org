@@ -150,7 +150,7 @@ def update_user():
         app.logger.info("Fetching user info from Stripe for /update...")
     else:
         app.logger.info("Updating user info in Stripe...")
-        print(update_member_stripe_account(request.form.to_dict()))
+        update_member_stripe_account(request.form.to_dict())
         flash("Your information has been updated successfully")
 
     member = get_member_stripe_account(email)
