@@ -205,7 +205,7 @@ def cancel_current_subscription_plan(c=None):
     try:
         for s in stripe.Subscription.list(customer=c, limit=10):
             print("canceling current subscriptions...")
-            stripe.Subscription.delete(s.id)
+            stripe.Subscription.delete(s.id, prorate=True)
     except Exception as e:
         log.info(e)
         pass
@@ -312,5 +312,5 @@ def update_member_stripe_account(user=None):
             log.info(e)
     
 def delete_membership():
-    log.info("Calling delete_memebership()")
+    log.info("Calling delete_membership()")
     

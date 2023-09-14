@@ -13,11 +13,8 @@
   <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
   <link href="{{ url_for('static', filename='css/card-js.min.css') }}" rel="stylesheet">
-  <!-- <script src="{{ url_for('static', filename='js/jquery-1.12.4.min.js') }}"></script> -->
   <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/card-js.min.js') }}"></script>
-
-   <!-- {{ member.email }} -->
 
   <script language="javascript">
  
@@ -190,6 +187,16 @@
       update_summary();
     });
 
+    $("#btnSubmit").click(function() {
+      $(this).prop("disabled",true);
+      $("#form1").trigger("submit");
+    });
+    
+    $("#btnCancel").click(function() {
+      console.log("Cancel Button CLicked");
+      window.location.replace("/");
+    });
+
     // Set all of the FORM elements after load
 
     $("#fullName").val(user.fullName);
@@ -247,7 +254,6 @@
     {% with messages = get_flashed_messages() %}
       {% if messages %}
 
-      // $("#notice").hide();
       $("#update_notice").show();
 
       $("#update_notice").fadeTo(5000, 500).slideUp(500, function(){
@@ -260,10 +266,15 @@
   }); // End of document.ready
 
   </script>
-
 </head>
 
 <body>
+
+<!-- Appearance is controlled via JS, only shows on form update refresh -->
+<div class="alert alert-primary" role="alert" name="update_notice" id="update_notice" style="margin-top:10px;">
+  <strong>Your membership information has been updated...</strong>
+</div>
+
 <nav class="navbar navbar-expand-sm sticky-top" style="background-color: #eee;">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">
@@ -302,7 +313,7 @@
 
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 
-<form class="needs-validation" method="POST">
+<form class="needs-validation" method="POST" name="form1" id="form1">
   <input type="hidden" name="email" value="{{ session.userinfo.email }}"/>
   <input type="hidden" name="stripeId" value="{{ member.stripe_id }}"/>
   <input type="hidden" name="currentPaymentMethod" value="{{ member.payment_method }}" />
@@ -317,10 +328,6 @@
       please email <a href="mailto:support@synshop.org">support@synshop.org</a> 
       or reach out in the <a href="#">SYN Shop Discord</a>.
     </p>
-  </div>
-
-  <div class="alert alert-primary" role="alert" name="update_notice" id="update_notice" style="margin-top:50px;">
-    <strong>Your membership information has been updated...</strong>
   </div>
 
   {% if member.membership_type == 'free' %}
@@ -585,8 +592,9 @@
     </div>
 
     <button type="submit" class="btn btn-lg btn-primary" name="btnSubmit" id="btnSubmit">Submit</button>
-    <button type="cancel" class="btn btn-lg btn-secondary" name="btnCancel" id="btnCancel">Cancel</button>
-</form>
+    <button type="button" class="btn btn-lg btn-secondary" name="btnCancel" id="btnCancel">Cancel</button>
+
+  </form>
 </div>
 
 </body>
