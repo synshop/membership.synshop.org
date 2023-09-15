@@ -33,7 +33,7 @@ def main():
         csv_reader = csv.DictReader(csv_file)
         line_count = 0
         for row in csv_reader:
-            if row["Status"] == "" and row["Card ID"] == "":
+            if row["Status"] == "" and row["Plan"] == "":
                 id = row["id"]
                 try:
                     print(f'Removing {id}')
