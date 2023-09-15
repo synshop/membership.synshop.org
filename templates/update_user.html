@@ -196,12 +196,11 @@
       window.location.replace("/");
     });
 
-    /*
-    $("#btnDeleteMembership").click(function() {
+    $("#btnYesDelete").click(function() {
       console.log("Deleting Membership...");
-      alert("Deleting Membership...");
+      $("#reallyDeleteMembership").val(1);
+      $("#form1").trigger("submit");
     });
-    */
 
     // Set all of the FORM elements after load
 
@@ -277,7 +276,7 @@
 <body>
 
 <!-- Appearance is controlled via JS, only shows on form update refresh -->
-<div class="alert alert-primary" role="alert" name="update_notice" id="update_notice" style="margin-top:10px;">
+<div class="alert alert-success" role="alert" name="update_notice" id="update_notice">
   <strong>Your membership information has been updated...</strong>
 </div>
 
@@ -325,6 +324,7 @@
   <input type="hidden" name="currentPaymentMethod" value="{{ member.payment_method }}" />
   <input type="hidden" name="deleteCurrentPaymentMethod" id="deleteCurrentPaymentMethod" value="0"/>
   <input type="hidden" name="pageIsDirty" id="pageIsDirty" value="0"/>
+  <input type="hidden" name="reallyDeleteMembership" id="reallyDeleteMembership"/>
 
     <div class="alert alert-warning" role="alert" name="notice" id="notice">
     <h4 class="alert-heading">Update Your Membership</h4>
@@ -647,9 +647,12 @@
             deleting your account.  However, if you are sure you want to do 
             this, clicking the <strong>Yes, I'm sure, delete it.</strong> 
             button below will delete all traces of your existence (which 
-            includes you debt / credit card) in our systems, including 
-            Auth0 and Stripe.
+            includes your debt / credit card and login access) in our systems.
           </p>
+          <p>
+            If you want to ever re-join SYN Shop, you'll have to create a new account.
+          </p>
+
           <p class="alert alert-warning">
             If there is anything you want to let us know about before
             leaving, please reach out to the board of directors either in 
@@ -658,7 +661,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Just Kidding!</button>
-            <button type="button" class="btn btn-danger">Yes, I'm sure, delete it.</button>
+            <button type="button" class="btn btn-danger" id="btnYesDelete" name="btnYesDelete">Yes, I'm sure, delete it.</button>
           </div>
         </div>
       </div>

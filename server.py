@@ -7,7 +7,7 @@ from authlib.integrations.base_client.errors import OAuthError
 
 from flask import Flask, redirect, render_template, request, session, url_for, flash
 from crypto import SettingsUtil, CryptoUtil
-from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account
+from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account, delete_membership
 
 app = Flask(__name__) 
 
@@ -38,7 +38,7 @@ except Exception as e:
 
 # Logging
 file_handler = logging.FileHandler(app.config['LOG_FILE'])
-file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s: %(message)s'))
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(message)s'))
 file_handler.setLevel(logging.INFO)
 app.logger.setLevel(logging.INFO)
 app.logger.addHandler(file_handler)
@@ -148,7 +148,13 @@ def update_user():
     
     if request.method == 'GET':
         app.logger.info("Fetching user info from Stripe for /update...")
-    else:
+    
+    if request.method == 'POST':
+        if "reallyDeleteMembership" in request.form:
+            app.logger.info("TODO: Deleting member account...")
+            delete_membership()
+            return render_template("borked.html")
+
         app.logger.info("Updating user info in Stripe...")
         update_member_stripe_account(request.form.to_dict())
         flash("Your information has been updated successfully")
