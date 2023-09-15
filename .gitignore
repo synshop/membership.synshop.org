@@ -6,3 +6,4 @@ __pycache__
 *.pyc
 design-notes.md
 membership.service
+test*.csv

@@ -273,12 +273,17 @@ def update_member_stripe_account(user=None):
         
         try:
             if (is_dev):               
-                pm = "pm_card_visa"
+                pm_visa = "pm_card_visa"
                 pm_mc = "pm_card_mastercard"
+
+                if user["card-number"].replace(" ","") == "424242424242":
+                    pm = pm_visa
+                else:
+                    pm = pm_mc
             else:
                 pm = stripe.PaymentMethod.create(type="card",card=real_card)
 
-            x = stripe.PaymentMethod.attach(pm_mc,customer=member["stripe_id"])
+            x = stripe.PaymentMethod.attach(pm,customer=member["stripe_id"])
 
             stripe.Customer.modify(
                 member["stripe_id"],

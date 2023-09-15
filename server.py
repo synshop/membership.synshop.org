@@ -150,10 +150,12 @@ def update_user():
         app.logger.info("Fetching user info from Stripe for /update...")
     
     if request.method == 'POST':
+        
         if "reallyDeleteMembership" in request.form:
-            app.logger.info("TODO: Deleting member account...")
-            delete_membership()
-            return render_template("borked.html")
+            if request.form["reallyDeleteMembership"] == "1":
+                app.logger.info("TODO: Deleting member account...")
+                delete_membership()
+                return render_template("borked.html")
 
         app.logger.info("Updating user info in Stripe...")
         update_member_stripe_account(request.form.to_dict())
