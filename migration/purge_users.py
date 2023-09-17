@@ -5,7 +5,7 @@ sys.path.insert(1, '../.')
 
 from crypto import SettingsUtil, CryptoUtil
 
-USERS_FILE = "/home/ubuntu/unified_customers.csv"
+USERS_FILE = "./unified_customers.csv"
 
 # Load Configuration Variables
 try:
@@ -18,6 +18,8 @@ except Exception as e:
 try:
     is_dev = config.IS_DEV
     ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get()
+
+    is_dev = False
 
     if is_dev:
         stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN_DEVO, ENCRYPTION_KEY)
@@ -39,7 +41,7 @@ def main():
         csv_reader = csv.DictReader(csv_file)
         line_count = 0
         for row in csv_reader:
-            if row["Status"] == "" and row["Plan"] == "":
+            if row["Status"] == "" and row["Plan"] == "" and row["Card ID"] != "":
                 id = row["id"]
                 try:
                     print(f'Removing {row}')
