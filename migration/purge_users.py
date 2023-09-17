@@ -5,7 +5,7 @@ sys.path.insert(1, '../.')
 
 from crypto import SettingsUtil, CryptoUtil
 
-USERS_FILE = "test.csv"
+USERS_FILE = "/home/ubuntu/unified_customers.csv"
 
 # Load Configuration Variables
 try:
@@ -16,8 +16,14 @@ except Exception as e:
 
 # Load Encrypted Configuration Variables
 try:
+    is_dev = config.IS_DEV
     ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get()
-    stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN, ENCRYPTION_KEY)
+
+    if is_dev:
+        stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN_DEVO, ENCRYPTION_KEY)
+    else:
+        stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN_PROD, ENCRYPTION_KEY)
+
     stripe.api_version = config.STRIPE_VERSION
     auth0_client_secret = CryptoUtil.decrypt(config.ENCRYPTED_AUTH0_CLIENT_SECRET, ENCRYPTION_KEY)
     auth0_client_id = config.AUTH0_CLIENT_ID
@@ -36,8 +42,8 @@ def main():
             if row["Status"] == "" and row["Plan"] == "":
                 id = row["id"]
                 try:
-                    print(f'Removing {id}')
-                    stripe.Customer.delete(id)
+                    print(f'Removing {row}')
+                    # stripe.Customer.delete(id)
                     line_count += 1
                 except stripe.error.InvalidRequestError:
                     continue
