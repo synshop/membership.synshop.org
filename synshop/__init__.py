@@ -316,6 +316,12 @@ def update_member_stripe_account(user=None):
         except Exception as e:
             log.info(e)
     
-def delete_membership():
-    log.info("Calling delete_membership()")
+def delete_membership(id):
+    try:
+        log.info("Deleting member account " + id)
+        stripe.Customer.delete(id)
+        log.info("Member account deleted successfully")
+        return True
+    except:
+        return False
     

@@ -147,14 +147,19 @@ def update_user():
     email = session["user"]["userinfo"]["email"]
     
     if request.method == 'GET':
-        app.logger.info("Fetching user info from Stripe for /update...")
-    
+         if has_stripe_account(email) == 1:
+            app.logger.info("Fetching user info from Stripe for /update...")
+         else:
+             app.logger.info("User has a Auth0 account but was not found in Stripe, redirecting to /new")
+             # flash("yyyyy")
+             return redirect(url_for('new_user', session=session.get("user"), mf=mf, lf=lf))
+             
     if request.method == 'POST':
         
         if "reallyDeleteMembership" in request.form:
             if request.form["reallyDeleteMembership"] == "1":
-                app.logger.info("TODO: Deleting member account...")
-                delete_membership()
+                stripe_id = request.form['stripeId']
+                delete_membership(stripe_id)
                 return render_template("borked.html")
 
         app.logger.info("Updating user info in Stripe...")

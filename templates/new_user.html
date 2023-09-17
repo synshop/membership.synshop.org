@@ -20,6 +20,8 @@
   
   $( document ).ready(function() {
 
+    $("#update_notice").hide()
+
     $("#rowMembershipFee").hide();
     $("#rowLockerFee").hide();
     $("#rowDonation").hide();
@@ -113,6 +115,18 @@
 
     update_summary();
 
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+
+      $("#update_notice").show();
+
+      $("#update_notice").fadeTo(5000, 500).slideUp(500, function(){
+        $("#update_notice").slideUp(500);
+      });
+      
+      {% endif %}
+    {% endwith %}
+
   }); // End of document.ready
 
   </script>
@@ -120,6 +134,12 @@
 </head>
 
 <body>
+
+  <!-- Appearance is controlled via JS, only shows on form update refresh -->
+  <div class="alert alert-success" role="alert" name="update_notice" id="update_notice">
+    <strong>You don't appear to have an account set up, so we are starting the process to set you up</strong>
+  </div>
+
 <nav class="navbar navbar-expand-sm sticky-top" style="background-color: #eee;">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">
