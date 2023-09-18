@@ -1,5 +1,4 @@
 .env*
-activate
 .venv*
 config.py
 __pycache__
