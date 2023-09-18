@@ -1,0 +1,14 @@
+[Unit]
+Description=SYN Shop membership system
+After=network.target
+
+[Service]
+Type=simple
+User=membership
+WorkingDirectory=/home/membership/membership-dev.synshop.org
+ExecStart=/home/membership/membership-dev.synshop.org/venv/bin/python3 -u ./server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
