@@ -4,7 +4,6 @@ config.py
 __pycache__
 *.pyc
 design-notes.md
-membership.service
 migration/*.csv
 gunicorn1*.sh
 venv
