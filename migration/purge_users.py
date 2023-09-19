@@ -5,7 +5,11 @@ sys.path.insert(1, '../.')
 
 from crypto import SettingsUtil, CryptoUtil
 
-USERS_FILE = "./unified_customers.csv"
+if sys.argv[1]:
+    USERS_FILE = sys.argv[1]
+    LOG_FILE = USERS_FILE + ".output"
+else:
+    exit
 
 # Load Configuration Variables
 try:
@@ -37,20 +41,27 @@ except Exception as e:
     
 def main():
 
+    f = open(LOG_FILE , "w")
     with open(USERS_FILE, mode='r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
-        line_count = 0
         for row in csv_reader:
-            if row["Status"] == "" and row["Plan"] == "" and row["Card ID"] != "":
-                id = row["id"]
-                try:
-                    print(f'Removing {row}')
-                    # stripe.Customer.delete(id)
-                    line_count += 1
-                except stripe.error.InvalidRequestError:
+            try:
+
+                if row["Status"] == "" and row["Plan"] == "":
+                    id = row["id"]
+                    f.write(f'R: {row}\n')
+                    stripe.Customer.delete(id)
+            
+                if row["Status"] == "active":
+                    f.write(f'NR: {row}\n')
+
+            except stripe.error.InvalidRequestError:
+                    f.write(f'PR: {row}\n')
                     continue
-                
-        print(f'Processed {line_count} accounts...')
+            
+            f.flush()
+    
+    f.close()
 
 if __name__ == "__main__":
     main()
