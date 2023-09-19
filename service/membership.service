@@ -7,7 +7,7 @@ Type=simple
 User=membership
 Environment="ENCRYPTION_KEY=CHANGEME"
 WorkingDirectory=/home/membership/membership.synshop.org
-ExecStart=/home/membership/membership-dev.synshop.org/venv/bin/gunicorn --bind localhost:3000 --log-file /var/log/membership.log --pid /tmp/gunicorn.pid server:app
+ExecStart=/home/membership/membership.synshop.org/venv/bin/gunicorn --bind localhost:3000 --log-file /var/log/membership.log --pid /tmp/gunicorn-membership.pid server:app
 Restart=always
 RestartSec=5
 
