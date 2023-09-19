@@ -113,6 +113,15 @@
       update_summary();
     });
 
+    $("#btnSubmit").click(function() {
+      $(this).prop("disabled",true);
+      $("#form1").trigger("submit");
+    });
+    
+    $("#btnCancel").click(function() {
+      window.location.replace("/");
+    });
+    
     update_summary();
 
     {% with messages = get_flashed_messages() %}
