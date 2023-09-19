@@ -5,8 +5,9 @@ After=network.target
 [Service]
 Type=simple
 User=membership
+Environment="ENCRYPTION_KEY=CHANGEME"
 WorkingDirectory=/home/membership/membership.synshop.org
-ExecStart=/home/membership/membership.synshop.org/venv/bin/python3 -u ./server.py
+ExecStart=/home/membership/membership-dev.synshop.org/venv/bin/gunicorn --bind [::]:3000 --log-file /var/log/membership.log --pid /tmp/gunicorn.pid server:app
 Restart=always
 RestartSec=5
 
