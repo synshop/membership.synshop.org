@@ -26,6 +26,22 @@
     $("#rowLockerFee").hide();
     $("#rowDonation").hide();
     
+    jQuery.fn.preventDoubleSubmission = function() {
+      $(this).on('submit',function(e){
+        var $form = $(this);
+
+        if ($form.data('submitted') === true) {
+          // Previously submitted - don't submit again
+          e.preventDefault();
+        } else {
+          // Mark it so that the next submit can be ignored
+          $form.data('submitted', true);
+        }
+      });
+
+      return this;
+    };
+
     let paymentFreqString = {};
     paymentFreqString[1] = "Every Month";
     paymentFreqString[3] = "Every 3 Months";
@@ -113,16 +129,12 @@
       update_summary();
     });
     
-    $("#btnSubmit").click(function() {
-      $("#btnSubmit").hide();
-      setTimeout($(#btnSubmit).show(), 3000);
-    });
-
     $("#btnCancel").click(function() {
       window.location.replace("/");
     });
     
     update_summary();
+    $('#form1').preventDoubleSubmission();
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
@@ -146,7 +158,7 @@
 
   <!-- Appearance is controlled via JS, only shows on form update refresh -->
   <div class="alert alert-success" role="alert" name="update_notice" id="update_notice">
-    <strong>You don't appear to have an account set up, so we are starting the process to set you up</strong>
+    <strong>You don't appear to have a billing account, so we are starting the set up process for you</strong>
   </div>
 
 <nav class="navbar navbar-expand-sm sticky-top" style="background-color: #eee;">
