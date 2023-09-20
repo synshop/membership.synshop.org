@@ -112,14 +112,13 @@
       user.paymentFrequency = $("input[name='payFreqRadio']:checked").val() * 1;
       update_summary();
     });
-  
-    $("#btnSubmit").click(function() {
-      // $(this).prop("disabled",true);
+    
+    /*
+    $("btnSubmit").click(function() {
       $(this).hide();
-      return true;
-      // $("#form1").trigger("submit");
+      setTimeout($(this).show(), 3000);
     });
-   
+    */
 
     $("#btnCancel").click(function() {
       window.location.replace("/");
