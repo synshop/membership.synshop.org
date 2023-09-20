@@ -160,7 +160,7 @@ def update_user():
             if request.form["reallyDeleteMembership"] == "1":
                 stripe_id = request.form['stripeId']
                 delete_membership(stripe_id)
-                return render_template("borked.html")
+                return redirect(url_for('delete_user'))
 
         app.logger.info("Updating user info in Stripe...")
         update_member_stripe_account(request.form.to_dict())
@@ -179,5 +179,9 @@ def update_user():
 def welcome_user():
     return render_template("welcome.html", root_server_url=app.config['ROOT_SERVER_URL'])
 
+@app.route("/delete")
+def delete_user():
+    return render_template("deleted.html", root_server_url=app.config['ROOT_SERVER_URL'])
+
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000, debug=True)
+    app.run(host="::", port=8000, debug=True)

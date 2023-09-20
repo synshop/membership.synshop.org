@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SYN Shop Membership Management</title>
+    <link href="{{ url_for('static', filename='images/favicon.ico') }}" rel="icon" >
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <noscript>this site requires javascript for both membership.synshop.net and synshop.auth0.com</noscript>
+    <script src="{{ url_for('static', filename='js/main.min.js') }}"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  </head>
+
+  <body class="layout--splash">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+          <a class="site-logo" href="/"><img src="{{ url_for('static', filename='images/logo_textless.png') }}" alt="SYN Shop"></a>
+        
+        <a class="site-title" href="/">
+          SYN Shop
+          <span class="site-subtitle">The Las Vegas Hackerspace</span>
+        </a>
+        <ul class="visible-links"><li class="masthead__menu-item">
+          <a href="{{ root_server_url }}/hours/">Hours</a>
+        </li><li class="masthead__menu-item">
+          <a href="{{ root_server_url }}/events/">Events</a>
+        </li><li class="masthead__menu-item">
+          <a href="{{ root_server_url }}/equipment/">Equipment</a>
+        </li><li class="masthead__menu-item">
+          <a href="https://rtfm.synshop.org/">RTFM</a>
+        </li><li class="masthead__menu-item">
+          <a href="{{ root_server_url }}/about/">About</a>
+        </li>
+        <li class="masthead__menu-item">
+          <a href="{{ root_server_url }}/contact/">Contact</a>
+        </li>
+        <li class="masthead__menu-item">
+          <a href="#" style="pointer-events: none">Membership</a>
+        </li>
+      </ul>
+
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<div class="initial-content">
+
+  <div class="page__hero--overlay" style="background-color: #5e616c; background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/static/images/header_synshop.png');">
+    <div class="wrapper">
+      <h1 id="page-title" class="page__title" itemprop="headline">Shop Membership Management</h1>
+    </div>
+  </div>
+
+  <div id="main" role="main">
+    <div class="page__inner-wrap">
+    <section class="page__content e-content" itemprop="text">
+
+      <h1 id="new-members">Account has been deleted</h1>
+      <p>Sorry to see you go!  The following information has been purged from the system:</p>
+      <ul>
+        <li>Stripe Customer Information</li>
+        <li>Payment Method (Credit Card Information)</li>
+        <li>Authentication Information (Auth0 Login Credentials)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
