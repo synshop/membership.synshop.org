@@ -1,6 +1,6 @@
 
 from functools import wraps
-import json, logging
+import logging
 
 from authlib.integrations.flask_client import OAuth
 from authlib.integrations.base_client.errors import OAuthError
@@ -82,24 +82,27 @@ def callback():
         email = token['userinfo']['email']
 
         if action == "update":
-            
-            if has_stripe_account(email) == 1:
-                app.logger.info("This email address was found in Stripe, redirecting to /update...")
-                return redirect(url_for("update_user"))
-            else:
-                app.logger.info("This email address was not found in Stripe, redirecting to /new...")
-                return redirect(url_for("new_user"))
-        
-        if action == "new":
 
             if has_stripe_account(email) == 1:
                 app.logger.info("This email address was found in Stripe, redirecting to /update...")
                 return redirect(url_for("update_user"))
             else:
                 app.logger.info("This email address was not found in Stripe, redirecting to /new...")
-                redirect(url_for("new_user"))
-        
-        return url_for("logout")
+                return redirect(url_for("new_user"))
+            
+        elif action == "new":
+
+            if has_stripe_account(email) == 1:
+                app.logger.info("This email address was found in Stripe, redirecting to /update...")
+                return redirect(url_for("update_user"))
+            else:
+                app.logger.info("This email address was not found in Stripe, redirecting to /new...")
+                flash("new user")
+                return redirect(url_for("new_user"))
+
+        else:
+            app.logger.info("This email address was not found in Stripe, redirecting to /new...")
+            return redirect(url_for("new_user"))
 
     except OAuthError:
         return render_template("validate.html")
@@ -151,7 +154,6 @@ def update_user():
             app.logger.info("Fetching user info from Stripe for /update...")
          else:
              app.logger.info("User has a Auth0 account but was not found in Stripe, redirecting to /new")
-             # flash("yyyyy")
              return redirect(url_for('new_user', session=session.get("user"), mf=mf, lf=lf))
              
     if request.method == 'POST':
