@@ -97,7 +97,7 @@ def callback():
                 return redirect(url_for("update_user"))
             else:
                 app.logger.info("This email address was not found in Stripe, redirecting to /new...")
-                flash("new user")
+                flash("new stripe user")
                 return redirect(url_for("new_user"))
 
         else:
@@ -155,6 +155,7 @@ def update_user():
             app.logger.info("Fetching user info from Stripe for /update...")
          else:
              app.logger.info("User has a Auth0 account but was not found in Stripe, redirecting to /new")
+             flash("new stripe user")
              return redirect(url_for('new_user', session=session.get("user"), mf=mf, lf=lf))
              
     if request.method == 'POST':
