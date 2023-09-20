@@ -104,7 +104,8 @@ def callback():
             app.logger.info("This email address was not found in Stripe, redirecting to /new...")
             return redirect(url_for("new_user"))
 
-    except OAuthError:
+    except OAuthError as e:
+        app.logger.info(e)
         return render_template("validate.html")
 
 @app.route("/login")
