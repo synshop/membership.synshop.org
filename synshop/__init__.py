@@ -150,7 +150,6 @@ def build_subscription_plan(locker_fee=False,donation_amount=0,payment_freq=1,is
     if locker_fee:
         lf = {"price": pricing.locker_fees[fd]}
         s_list.append(lf)
-        print(s_list)
     
     # Add a donation amount product if selected
     if int(donation_amount) != 0:

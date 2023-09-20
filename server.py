@@ -78,30 +78,14 @@ def callback():
     try:
         token = oauth.auth0.authorize_access_token()
         session["user"] = token
-        action = request.args.get('s')
         email = token['userinfo']['email']
 
-        if action == "update":
-
-            if has_stripe_account(email) == 1:
-                app.logger.info("This email address was found in Stripe, redirecting to /update...")
-                return redirect(url_for("update_user"))
-            else:
-                app.logger.info("This email address was not found in Stripe, redirecting to /new...")
-                return redirect(url_for("new_user"))
-            
-        elif action == "new":
-
-            if has_stripe_account(email) == 1:
-                app.logger.info("This email address was found in Stripe, redirecting to /update...")
-                return redirect(url_for("update_user"))
-            else:
-                app.logger.info("This email address was not found in Stripe, redirecting to /new...")
-                flash("new stripe user")
-                return redirect(url_for("new_user"))
-
+        if has_stripe_account(email) == 1:
+            app.logger.info("CB - This email address was found in Stripe, redirecting to /update...")
+            return redirect(url_for("update_user"))
         else:
-            app.logger.info("This email address was not found in Stripe, redirecting to /new...")
+            app.logger.info("CB - This email address was not found in Stripe, redirecting to /new...")
+            session["auth0-no-stripe"] = True
             return redirect(url_for("new_user"))
 
     except OAuthError as e:
@@ -110,7 +94,7 @@ def callback():
 
 @app.route("/login")
 def login():
-    redirect_uri=url_for("callback", s="update", _external=True)
+    redirect_uri=url_for("callback", _external=True)
     return oauth.auth0.authorize_redirect(redirect_uri)
 
 @app.route("/logout")
@@ -120,7 +104,7 @@ def logout():
 
 @app.route("/signup")
 def signup():
-    redirect_uri=url_for("callback", s="new", _external=True)
+    redirect_uri=url_for("callback", _external=True)
     return oauth.auth0.authorize_redirect(redirect_uri,screen_hint='signup')
 
 @app.route("/new", methods=['GET', 'POST'])
@@ -134,6 +118,10 @@ def new_user():
         return redirect(url_for("update_user")) 
 
     if request.method == 'GET':
+
+        if "auth0-no-stripe" in session:
+            flash("Auth0, no Stripe")
+
         mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
         lf=app.config["NEW_USER_LOCKER_FEE"]
         return render_template("new_user.html", session=session.get("user"), mf=mf, lf=lf)
