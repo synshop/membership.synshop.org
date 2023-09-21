@@ -49,7 +49,7 @@
     paymentFreqString[12] = "Every 12 Months";
 
     const user = {
-      email: "{{ session }}",
+      email: "{{ session.user.email }}",
       fullName: "Bobby McGee",
       discordId: "bobbyg",
       membershipFee: {{ mf }},
@@ -209,7 +209,7 @@
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 
   <form class="needs-validation" method="POST" name="form1" id="form1">
-  <input type="hidden" name="email" value="{{ session }}"/>
+  <input type="hidden" name="email" value="{{ session.user.email }}"/>
 
   <div class="alert alert-warning" role="alert">
     <h4 class="alert-heading">Welcome to SYN Shop!</h4>
@@ -232,7 +232,7 @@
       <div class="row g-3" style="margin-bottom:15px;">
         <div class="col">
           <h6 style="display:inline;margin-right:10px;padding:10px;background-color: rgb(228, 228, 228);">
-            {{ session }}
+            {{ session.user.email }}
           </h6> 
           (This is your login, so be sure to remember it)
         </div>
