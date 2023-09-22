@@ -49,10 +49,10 @@ def create_new_member(user=None):
         locker_fee = True
     
     real_card = {
-        "number": user["card-number"].replace(" ",""),
-        "exp_month": user["expiry-month"],
-        "exp_year": user["expiry-year"],
-        "cvc": user["cvc"]
+        "number": user["cc-number"].replace(" ",""),
+        "exp_month": user["cc-exp"],
+        "exp_year": user["cc-exp"],
+        "cvc": user["cc-cvv"]
     }
 
     try:
@@ -269,10 +269,10 @@ def update_member_stripe_account(user=None):
         #   4) detach the old PaymentMethod
 
         real_card = {
-            "number": user["card-number"].replace(" ",""),
-            "exp_month": user["expiry-month"],
-            "exp_year": user["expiry-year"],
-            "cvc": user["cvc"]
+            "number": user["cc-number"].replace(" ",""),
+            "exp_month": user["cc-exp"],
+            "exp_year": user["cc-exp"],
+            "cvc": user["cc-cvv"]
         }
         
         try:
