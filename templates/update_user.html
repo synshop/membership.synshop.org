@@ -547,77 +547,77 @@
 
     <!-- Payment Information -->
     <div class="card" style="margin-bottom:50px;width:75%">
-    <h6 class="card-header" id="paymentMethodHeader">Payment Information - Current Payment Method</h6>
-    <div class="card-body">
+      <h6 class="card-header" id="paymentMethodHeader">Payment Information - Current Payment Method</h6>
+      <div class="card-body">
 
-      <div class="row g-3" id="currentPaymentMethodTable">
-        <div class="col">
-          <input 
-            type="text" 
-            class="form-control input-sm"
-            value="{{ member.payment_brand | upper }}"
-            name="brand" 
-            id="brand" 
-            disabled />
+        <div class="row g-3" id="currentPaymentMethodTable">
+          <div class="col">
+            <input 
+              type="text" 
+              class="form-control input-sm"
+              value="{{ member.payment_brand | upper }}"
+              name="brand" 
+              id="brand" 
+              disabled />
+          </div>
+          <div class="col">
+            <input 
+              type="text" 
+              class="form-control input-sm"
+              value="**** **** **** {{ member.last4 }}"
+              name="last4" 
+              id="last4" 
+              disabled />
+          </div>        
+          <div class="col">
+            <input 
+              type="text" 
+              class="form-control input-sm" 
+              value="{{ member.exp_month }} / {{ member.exp_year }}"
+              name="expDate" 
+              id="expDate" 
+              disabled />
+          </div>
+          <div class="col">
+            <input 
+              type="button" 
+              class="btn btn-danger" 
+              value="Delete Card?"
+              name="cardDelete" 
+              id="cardDelete" />
+          </div>
         </div>
-        <div class="col">
-          <input 
-            type="text" 
-            class="form-control input-sm"
-            value="**** **** **** {{ member.last4 }}"
-            name="last4" 
-            id="last4" 
-            disabled />
-        </div>        
-        <div class="col">
-          <input 
-            type="text" 
-            class="form-control input-sm" 
-            value="{{ member.exp_month }} / {{ member.exp_year }}"
-            name="expDate" 
-            id="expDate" 
-            disabled />
-        </div>
-        <div class="col">
-          <input 
-            type="button" 
-            class="btn btn-danger" 
-            value="Delete Card?"
-            name="cardDelete" 
-            id="cardDelete" />
-        </div>
-      </div>
 
-      <div class="row g-3" style="margin-bottom:15px;" id="newPaymentMethodTable">
+        <div class="row g-3" style="margin-bottom:15px;" id="newPaymentMethodTable">
 
           <div class="col-md-6">
             <label for="cc-number" class="form-label">Card Number</label>
-            <input type="text" class="form-control" id="cc-number" placeholder="" required minlength="15" maxlength="16" autocomplete="on">
+            <input type="text" class="form-control" id="cc-number" name=""cc-number" placeholder="" required minlength="15" maxlength="16" autocomplete="on">
             <div class="invalid-feedback" id="cc-number-invalid">
               Valid card number is required
             </div>
           </div>
-  
+
           <div class="col-md-3">
             <label for="cc-exp" class="form-label">Expiration Date</label>
-            <input type="text" class="form-control" id="cc-exp" placeholder="mmyy" required minlength="4" maxlength="4" autocomplete="on">
+            <input type="text" class="form-control" id="cc-exp" name="cc-exp" placeholder="mmyy" required minlength="4" maxlength="4" autocomplete="on">
             <div class="invalid-feedback" id="cc-exp-invalid">
               Valid expiration date required
             </div>
           </div>
-  
+
           <div class="col-md-3">
             <label for="cc-cvv" class="form-label">CVV</label>
-            <input type="text" class="form-control" id="cc-cvv" placeholder="" minlength="3" maxlength="3" required autocomplete="on">
+            <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="" minlength="3" maxlength="3" required autocomplete="on">
             <div class="invalid-feedback" id="cc-cvv-invalid">
               Valid security code required
             </div>
           </div>
-  
-      </div>
+
+        </div>
       
-    </div>
-    <div class="card-footer text-body-secondary">
+      </div>
+      <div class="card-footer text-body-secondary">
       <div class="alert alert-warning" role="alert" style="margin-top:10px;">
         If you need to update your payment method, please delete your existing card and enter your new card 
         number, expiration date, and cvc.
@@ -629,23 +629,8 @@
       <br/><br/>
       <img style="display:inline;margin-left:18%;" src="{{ url_for('static', filename='images/stripe_small.png') }} "/>
       <img style="display:inline;" src="{{ url_for('static', filename='images/medlarge_stripe_cc.png') }} "/>
-    </div>
-    </div>
-
-    <!-- Delete Account Demo
-    <div class="card" style="margin-bottom:25px;width:75%;">
-      <h6 class="card-header bg-danger text-white" 
-          data-bs-toggle="collapse" 
-          data-bs-target="#collapseWidthExample" 
-          aria-expanded="false" 
-          aria-controls="collapseWidthExample">Danger Zone - Delete Membership
-        </h6>
-      
-      <div class="card-body" id="deleteMembership" name="deleteMembership">
-        Delete account?
       </div>
     </div>
-    -->
 
     <!-- Membership Summary -->
     <div class="card" style="width:75%;margin-bottom:15px;">
