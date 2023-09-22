@@ -187,6 +187,8 @@
         $("#membershipFee").prop("disabled",false);
         $("#lockerFee").prop("disabled",false);
         $("#paymentFreq" + user.paymentFrequency).prop("checked", true);
+        $("input[name='donationRadio']").prop("disabled",false);
+        $("input[name='payFreqRadio']").prop("disabled",false);
       }
       update_summary();
     });
@@ -291,6 +293,8 @@
       $("#membershipFee").prop("disabled",true);
       $("#lockerFee").prop("checked",false);
       $("#lockerFee").prop("disabled",true);
+      $("input[name='donationRadio']").prop("disabled",true);
+      $("input[name='payFreqRadio']").prop("disabled",true);
       $("#pauseMembership").prop("checked",true);
     }
 
