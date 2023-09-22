@@ -38,51 +38,6 @@ def is_charter_member(c=None):
         return True
     else:
         return False
-    
-def create_new_member(user=None):
-
-    locker_fee = False
-    donation_amount = user["donationRadio"]
-    payment_freq = user["payFreqRadio"]
-
-    if "lockerFeeChk" in user:
-        locker_fee = True
-    
-    real_card = {
-        "number": user["cc-number"].replace(" ",""),
-        "exp_month": user["cc-exp"],
-        "exp_year": user["cc-exp"],
-        "cvc": user["cc-cvv"]
-    }
-
-    try:
-
-        if (is_dev):
-            pm = "pm_card_visa"      
-        else:
-            pm = stripe.PaymentMethod.create(type="card",card=real_card)
-        
-        sc = stripe.Customer.create(
-            email = user["email"],
-            name = user["fullName"],
-            metadata = {
-                'discord_id': user["discordId"],
-            },
-            payment_method = pm,
-            invoice_settings = {
-                'default_payment_method': pm
-            }
-        )
-        
-        stripe.Subscription.create(
-            customer = sc.id,
-            items = build_subscription_plan(locker_fee, donation_amount, payment_freq, False)
-        )
-
-        return True
-    except Exception as e:
-        log.info(e)
-        return False
 
 def get_member_stripe_account(email=None):
 
@@ -133,6 +88,169 @@ def get_member_stripe_account(email=None):
 
     return member
 
+def create_new_member(user=None):
+
+    locker_fee = False
+    donation_amount = user["donationRadio"]
+    payment_freq = user["payFreqRadio"]
+
+    if "lockerFeeChk" in user:
+        locker_fee = True
+    
+    real_card = {
+        "number": user["cc-number"].replace(" ",""),
+        "exp_month": user["cc-exp"],
+        "exp_year": user["cc-exp"],
+        "cvc": user["cc-cvv"]
+    }
+
+    try:
+
+        if (is_dev):
+            pm = "pm_card_visa"    
+        else:
+            pm = stripe.PaymentMethod.create(type="card",card=real_card)
+        
+        sc = stripe.Customer.create(
+            email = user["email"],
+            name = user["fullName"],
+            metadata = {
+                'discord_id': user["discordId"],
+            },
+            payment_method = pm,
+            invoice_settings = {
+                'default_payment_method': pm
+            }
+        )
+        
+        stripe.Subscription.create(
+            customer = sc.id,
+            items = build_subscription_plan(locker_fee, donation_amount, payment_freq, False)
+        )
+
+        return True
+    except Exception as e:
+        log.info(e)
+        return False
+
+def update_member_stripe_account(user=None):
+
+    member = {
+        "stripe_id"                 : None,
+        "email"                     : None,
+        "full_name"                 : None,
+        "discord_id"                : None,
+        "current_payment_method"    : None,
+        "is_paused"                 : False,
+        "locker_fee"                : False,
+        "donation_amount"           : 0,
+        "payment_freq"              : 0,
+        "card_number"               : None,
+        "exp_month"                 : 0,
+        "exp_year"                  : 0,
+        "page_is_dirty"             : None
+    }
+
+    member["stripe_id"] = user["stripeId"]
+    member["email"] = user["email"]
+    member["full_name"] = user["fullName"]
+    member["discord_id"] = user["discordId"]
+    member["payment_freq"] = user["payFreqRadio"]
+    member["current_payment_method"] = user["currentPaymentMethod"]
+    member["page_is_dirty"] = user["pageIsDirty"]
+
+    if "pauseMembership" in user:
+        member["is_paused"] = True
+    
+    if "lockerFee" in user:
+        member["locker_fee"] = True
+    
+    if user["donationRadio"] != "0":
+        member["donation_amount"] = user["donationRadio"]
+    
+    # Always update customer metadata (Full Name, DiscordID)
+    # regardless of what the status of is_page_dirty is
+    try:
+        stripe.Customer.modify(
+            member["stripe_id"],
+            name = member["full_name"],
+            metadata = {'discord_id': member["discord_id"]}
+        )
+    except Exception as e:
+        log.info(e)
+
+    if user["deleteCurrentPaymentMethod"] == "1":
+
+        # Member adds a new card:
+        #   1) create a new PaymentMethod
+        #   2) attach it to the Stripe Customer
+        #   3) set new PaymentMethod as Customer default
+        #   4) detach the old PaymentMethod
+
+        real_card = {
+            "number": user["cc-number"].replace(" ",""),
+            "exp_month": user["cc-exp"],
+            "exp_year": user["cc-exp"],
+            "cvc": user["cc-cvv"]
+        }
+        
+        try:
+            if (is_dev):               
+
+                if user["card-number"].replace(" ","") == "424242424242":
+                    pm = "pm_card_visa"
+                elif user["card-number"].replace(" ","") == "5555555555552222":
+                    pm = "pm_card_mastercard"
+                elif user["card-number"].replace(" ","") == "6011111111111117":
+                    pm = "pm_card_discover"
+                elif user["card-number"].replace(" ","") == "378282246310005":
+                    pm = "pm_card_amex"
+
+            else:
+                pm = stripe.PaymentMethod.create(type="card",card=real_card)
+
+            x = stripe.PaymentMethod.attach(pm,customer=member["stripe_id"])
+
+            stripe.Customer.modify(
+                member["stripe_id"],
+                invoice_settings = {"default_payment_method" : x}
+            )
+
+            stripe.PaymentMethod.detach(member["current_payment_method"])
+
+        except Exception as e:
+            log.info(e)
+
+    # Update Subscriptions if necessary
+    if member["page_is_dirty"] == "1":
+
+        try:
+            cancel_current_subscription_plan(member["stripe_id"])
+
+            sp = build_subscription_plan(
+                locker_fee=member["locker_fee"],
+                donation_amount=member["donation_amount"],
+                payment_freq=member["payment_freq"],
+                is_paused=member["is_paused"]
+            )
+
+            stripe.Subscription.create(
+                customer = member["stripe_id"],
+                items = sp
+            )
+
+        except Exception as e:
+            log.info(e)
+    
+def delete_membership(id):
+    try:
+        log.info("Deleting member account " + id)
+        stripe.Customer.delete(id)
+        log.info("Member account deleted successfully")
+        return True
+    except:
+        return False
+    
 def build_subscription_plan(locker_fee=False,donation_amount=0,payment_freq=1,is_paused=False):
 
     if (is_paused):
@@ -213,119 +331,4 @@ def cancel_current_subscription_plan(c=None):
     except Exception as e:
         log.info(e)
         pass
-
-def update_member_stripe_account(user=None):
-
-    member = {
-        "stripe_id"                 : None,
-        "email"                     : None,
-        "full_name"                 : None,
-        "discord_id"                : None,
-        "current_payment_method"    : None,
-        "is_paused"                 : False,
-        "locker_fee"                : False,
-        "donation_amount"           : 0,
-        "payment_freq"              : 0,
-        "card_number"               : None,
-        "exp_month"                 : 0,
-        "exp_year"                  : 0,
-        "page_is_dirty"             : None
-    }
-
-    member["stripe_id"] = user["stripeId"]
-    member["email"] = user["email"]
-    member["full_name"] = user["fullName"]
-    member["discord_id"] = user["discordId"]
-    member["payment_freq"] = user["payFreqRadio"]
-    member["current_payment_method"] = user["currentPaymentMethod"]
-    member["page_is_dirty"] = user["pageIsDirty"]
-
-    if "pauseMembership" in user:
-        member["is_paused"] = True
-    
-    if "lockerFee" in user:
-        member["locker_fee"] = True
-    
-    if user["donationRadio"] != "0":
-        member["donation_amount"] = user["donationRadio"]
-    
-    # Always update customer metadata (Full Name, DiscordID)
-    # regardless of what the status of is_page_dirty is
-    try:
-        stripe.Customer.modify(
-            member["stripe_id"],
-            name = member["full_name"],
-            metadata = {'discord_id': member["discord_id"]}
-        )
-    except Exception as e:
-        log.info(e)
-
-    if user["deleteCurrentPaymentMethod"] == "1":
-
-        # Member adds a new card:
-        #   1) create a new PaymentMethod
-        #   2) attach it to the Stripe Customer
-        #   3) set new PaymentMethod as Customer default
-        #   4) detach the old PaymentMethod
-
-        real_card = {
-            "number": user["cc-number"].replace(" ",""),
-            "exp_month": user["cc-exp"],
-            "exp_year": user["cc-exp"],
-            "cvc": user["cc-cvv"]
-        }
-        
-        try:
-            if (is_dev):               
-                pm_visa = "pm_card_visa"
-                pm_mc = "pm_card_mastercard"
-
-                if user["card-number"].replace(" ","") == "424242424242":
-                    pm = pm_visa
-                else:
-                    pm = pm_mc
-            else:
-                pm = stripe.PaymentMethod.create(type="card",card=real_card)
-
-            x = stripe.PaymentMethod.attach(pm,customer=member["stripe_id"])
-
-            stripe.Customer.modify(
-                member["stripe_id"],
-                invoice_settings = {"default_payment_method" : x}
-            )
-
-            stripe.PaymentMethod.detach(member["current_payment_method"])
-
-        except Exception as e:
-            log.info(e)
-
-    # Update Subscriptions if necessary
-    if member["page_is_dirty"] == "1":
-
-        try:
-            cancel_current_subscription_plan(member["stripe_id"])
-
-            sp = build_subscription_plan(
-                locker_fee=member["locker_fee"],
-                donation_amount=member["donation_amount"],
-                payment_freq=member["payment_freq"],
-                is_paused=member["is_paused"]
-            )
-
-            stripe.Subscription.create(
-                customer = member["stripe_id"],
-                items = sp
-            )
-
-        except Exception as e:
-            log.info(e)
-    
-def delete_membership(id):
-    try:
-        log.info("Deleting member account " + id)
-        stripe.Customer.delete(id)
-        log.info("Member account deleted successfully")
-        return True
-    except:
-        return False
-    
+ 
