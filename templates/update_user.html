@@ -219,12 +219,15 @@
         var formatMask = CardJs.CREDIT_CARD_NUMBER_VISA_MASK;
         var card = CardJs.applyFormatMask($(this).val(),formatMask);
         $("#cc-number-invalid").hide();
+        $("#btnSubmit").prop('disabled', false);
       } else if (cardType == "AMEX" && cardLength == 15) {
         var formatMask = CardJs.CREDIT_CARD_NUMBER_AMEX_MASK;
         var card = CardJs.applyFormatMask($(this).val(),formatMask);
         $("#cc-number-invalid").hide();
+        $("#btnSubmit").prop('disabled', false);
       } else {
         $("#cc-number-invalid").show();
+        $("#btnSubmit").prop('disabled', true);
         card = $(this).val();
       }
 
@@ -240,8 +243,10 @@
 
       if (expDateLength != 4 || isInt == false) {
         $("#cc-exp-invalid").show();
+        $("#btnSubmit").prop('disabled', true);
       } else {
         $("#cc-exp-invalid").hide();
+        $("#btnSubmit").prop('disabled', false);
         //var mm = $(this).val().slice(0, 2);
         //var dd = $(this).val().slice(2, 4);
         //$(this).val(mm + "/" + dd);
@@ -255,8 +260,10 @@
 
       if (cvvLength != 3 || isInt == false) {
         $("#cc-cvv-invalid").show();
+        $("#btnSubmit").prop('disabled', true);
       } else {
         $("#cc-cvv-invalid").hide();
+        $("#btnSubmit").prop('disabled', false);
       }
     });
 
