@@ -104,6 +104,11 @@
 
     $("#fullName").on("blur", function() {
       user.fullName = $("#fullName").val();
+      if ($(this).val() == "") {
+        $("#fullname-invalid").show();
+      } else {
+        $("#fullname-invalid").hide();
+      }
     });
 
     $("#discordId").on("blur", function() {
@@ -275,47 +280,36 @@
   </div>
 
   <!-- User Information -->
-  <div class="card" style="margin-top:50px;margin-bottom:50px;">
+  <div class="card" style="width:85%;margin-top:50px;margin-bottom:25px;">
     <h6 class="card-header">Member Information</h6>
     <div class="card-body">
-
-      <div class="row g-3" style="margin-bottom:15px;">
-        <div class="col">
-          <h6 style="display:inline;margin-right:10px;padding:10px;background-color: rgb(228, 228, 228);">
-            {{ email }}
-          </h6> 
-          (This is your login, so be sure to remember it)
-        </div>
-      </div>
       
       <div class="row g-3">
-        <div class="col">
-          <input 
-            type="text" 
-            class="form-control input-sm" 
-            placeholder="Full Name (required)"
-            value=""
-            name="fullName" 
-            id="fullName" 
-            aria-label="First name" 
-            required />
+        <div class="col-md-5">
+          <label for="email" class="form-label"><b>Email (remember this!)</b></label>
+          <input type="text" class="form-control" id="email" name="email" value="{{email}}" disabled>
         </div>
-        <div class="col">
-          <input 
-            type="text" 
-            class="form-control input-sm" 
-            placeholder="Discord ID (optional but recommended)" 
-            name="discordId" 
-            id="discordId" 
-            aria-label="Discord ID" />
+
+        <div class="col-md-3">
+          <label for="fullName" class="form-label"><b>Full Name</b></label>
+          <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Full Name (required)" required autocomplete="on">
+          <div class="invalid-feedback" id="fullname-invalid">
+            Please enter your full name
+          </div>
         </div>
+
+        <div class="col-md-4">
+          <label for="discordId" class="form-label"><b>Discord ID</b></label>
+          <input type="text" class="form-control" id="discordId" name="discordId" placeholder="Optional, but recommended" placeholder="">
+        </div>
+
       </div>
 
     </div>
   </div>
 
     <!-- Subscription Information -->
-    <div class="card" style="margin-bottom:50px;">
+    <div class="card" style="width:85%;margin-bottom:25px;">
       <h6 class="card-header">Subscription Information</h6>
       <div class="card-body">
 
@@ -334,7 +328,7 @@
     </div>
 
     <!-- Donation Information -->
-    <div class="card" style="margin-bottom:50px;">
+    <div class="card" style="width:85%;margin-bottom:25px;">
           <h6 class="card-header">Extra Donation (Optional)</h6>
           <div class="card-body">
 
@@ -369,7 +363,7 @@
     </div>
 
     <!-- Payment Frequency -->
-    <div class="card" style="margin-bottom:50px;">
+    <div class="card" style="width:85%;margin-bottom:25px;">
       <h6 class="card-header">Payment Frequency</h6>
       <div class="card-body">
 
@@ -396,14 +390,14 @@
     </div>
 
   <!-- Payment Information -->
-  <div class="card" style="margin-bottom:50px;width:75%">
+  <div class="card" style="width:85%;margin-bottom:25px;">
     <h6 class="card-header">Payment Information</h6>
     <div class="card-body">
       
       <div class="row g-3" style="margin-bottom:15px;">
 
         <div class="col-md-6">
-          <label for="cc-number" class="form-label">Card Number</label>
+          <label for="cc-number" class="form-label"><b>Card Number</b></label>
           <input type="text" class="form-control" id="cc-number" name="cc-number" placeholder="" required minlength="15" maxlength="16" autocomplete="on">
           <div class="invalid-feedback" id="cc-number-invalid">
             Valid card number is required
@@ -411,7 +405,7 @@
         </div>
 
         <div class="col-md-3">
-          <label for="cc-exp" class="form-label">Expiration Date</label>
+          <label for="cc-exp" class="form-label"><b>Expiration Date</b></label>
           <input type="text" class="form-control" id="cc-exp" name="cc-exp" placeholder="mmyy" required minlength="4" maxlength="4" autocomplete="on">
           <div class="invalid-feedback" id="cc-exp-invalid">
             Valid expiration date required
@@ -419,7 +413,7 @@
         </div>
 
         <div class="col-md-3">
-          <label for="cc-cvv" class="form-label">CVV</label>
+          <label for="cc-cvv" class="form-label"><b>CVV</b></label>
           <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="" minlength="3" maxlength="3" required autocomplete="on">
           <div class="invalid-feedback" id="cc-cvv-invalid">
             Valid security code required
@@ -441,7 +435,7 @@
   </div>
 
     <!-- Membership Summary -->
-    <div class="card" style="width:75%;margin-bottom:15px;">
+    <div class="card" style="width:85%;margin-bottom:15px;">
       <h6 class="card-header">Membership Summary</h6>
       <div class="card-body">
 
@@ -484,6 +478,7 @@
 
       </div>
     </div>
+
     <button type="submit" class="btn btn-lg btn-primary" name="btnSubmit" id="btnSubmit">Submit</button>
     <button type="button" class="btn btn-lg btn-secondary" name="btnCancel" id="btnCancel">Cancel</button>
 </form>

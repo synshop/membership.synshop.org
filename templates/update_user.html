@@ -431,50 +431,36 @@
     {% endif %}
 
     <!-- User Information -->
-    <div class="card" style="margin-top:50px;margin-bottom:50px;">
+    <div class="card" style="width:85%;margin-top:50px;margin-bottom:25px;">
     <h6 class="card-header">Member Information</h6>
     <div class="card-body">
-
-      <div class="row g-3" style="margin-bottom:15px;">
-        <div class="col">
-          <h6 style="display:inline;margin-right:10px;padding:10px;background-color: rgb(228, 228, 228);">
-            {{ email }}
-          </h6> 
-          (This is your login, so be sure to remember it)
-        </div>
-      </div>
       
       <div class="row g-3">
-        <div class="col">
-          <input 
-            type="text" 
-            class="form-control input-sm" 
-            placeholder="Full Name (required)"
-            value=""
-            name="fullName" 
-            id="fullName" 
-            aria-label="First name" 
-            required />
+        <div class="col-md-5">
+          <label for="email" class="form-label">Email (remember this!)</label>
+          <input type="text" class="form-control" id="email" name="email" value="{{email}}" disabled>
         </div>
-        <div class="invalid-feedback" id="invalidFullName">
-          Please provide your full name.
+
+        <div class="col-md-3">
+          <label for="fullName" class="form-label">Full Name</label>
+          <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Full Name (required)" required autocomplete="on">
+          <div class="invalid-feedback" id="fullname-invalid">
+            Please enter your full name
+          </div>
         </div>
-        <div class="col">
-          <input 
-            type="text" 
-            class="form-control input-sm" 
-            placeholder="Discord ID (optional but recommended)" 
-            name="discordId" 
-            id="discordId" 
-            aria-label="Discord ID" />
+
+        <div class="col-md-4">
+          <label for="discordId" class="form-label">Discord ID</label>
+          <input type="text" class="form-control" id="discordId" name="discordId" placeholder="Optional, but recommended" placeholder="">
         </div>
-      </div>
+
+      </div> 
 
     </div>
     </div>
 
     <!-- Subscription Information -->
-    <div class="card" style="margin-bottom:25px;">
+    <div class="card" style="width:85%;margin-bottom:25px;">
       <h6 class="card-header">Subscription Information</h6>
       <div class="card-body">
 
@@ -501,7 +487,7 @@
     </div>
 
     <!-- Donation Information -->
-    <div class="card" style="margin-bottom:50px;">
+    <div class="card" style="width:85%;margin-bottom:25px;">
           <h6 class="card-header">Extra Donation (Optional)</h6>
           <div class="card-body">
 
@@ -536,7 +522,7 @@
     </div>
 
     <!-- Payment Frequency -->
-    <div class="card" style="margin-bottom:50px;">
+    <div class="card" style="width:85%;margin-bottom:25px;">
       <h6 class="card-header">Payment Frequency</h6>
       <div class="card-body">
 
@@ -563,7 +549,7 @@
     </div>
 
     <!-- Payment Information -->
-    <div class="card" style="margin-bottom:50px;width:75%">
+    <div class="card" style="width:85%;margin-bottom:25px;">
       <h6 class="card-header" id="paymentMethodHeader">Payment Information - Current Payment Method</h6>
       <div class="card-body">
 
@@ -657,7 +643,7 @@
     </div>
 
     <!-- Membership Summary -->
-    <div class="card" style="width:75%;margin-bottom:15px;">
+    <div class="card" style="width:85%;margin-bottom:15px;">
       <h6 class="card-header">Membership Summary</h6>
       <div class="card-body">
 
@@ -708,7 +694,7 @@
     </div>
 
     <!-- Submit, Cancel and Delete Membership Controls -->
-    <div class="card" style="width:75%;">
+    <div class="card" style="width:85%;">
       <div class="card-body">
         <div class="row g-3">
           <div class="col">
@@ -727,7 +713,11 @@
     </div>
 
     <!-- Delete Membership Modal -->
-    <div class="modal fade" id="deleteMembershipModal" tabindex="-1" aria-labelledby="deleteMembershipModalLabel" aria-hidden="true">
+    <div class="modal fade" 
+      id="deleteMembershipModal" 
+      tabindex="-1" 
+      aria-labelledby="deleteMembershipModalLabel" 
+      aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
