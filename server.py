@@ -111,8 +111,6 @@ def signup():
 @login_required
 def new_user():
 
-    # email = "brian.e.munroe@gmail.com"
-    # return render_template("new_user.html", email=email, mf=50, lf=10)
     email = session["user"]["userinfo"]["email"]
 
     if has_stripe_account(email) == 1:
