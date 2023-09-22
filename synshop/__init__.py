@@ -197,13 +197,13 @@ def update_member_stripe_account(user=None):
         try:
             if (is_dev):               
 
-                if user["card-number"].replace(" ","") == "424242424242":
+                if user["cc-number"].replace(" ","") == "424242424242":
                     pm = "pm_card_visa"
-                elif user["card-number"].replace(" ","") == "5555555555552222":
+                elif user["cc-number"].replace(" ","") == "5555555555552222":
                     pm = "pm_card_mastercard"
-                elif user["card-number"].replace(" ","") == "6011111111111117":
+                elif user["cc-number"].replace(" ","") == "6011111111111117":
                     pm = "pm_card_discover"
-                elif user["card-number"].replace(" ","") == "378282246310005":
+                elif user["cc-number"].replace(" ","") == "378282246310005":
                     pm = "pm_card_amex"
 
             else:
