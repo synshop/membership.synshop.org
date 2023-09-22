@@ -180,8 +180,11 @@
         $("#lockerFee").prop("checked",false);
         $("#lockerFee").prop("disabled",true);
 
-        $("input[name='donationRadio']").removeAttr('checked');
-        $("input[name='payFreqRadio']").removeAttr('checked');
+        $("#donation0").prop("checked", true);
+        $("input[name='donationRadio']").prop("disabled",true);
+
+        $("#paymentFreq0").prop("checked", true);
+        $("input[name='paymentFreq']").prop("disabled",true);
       } else {
         user.membershipIsPaused = false;
         $("#membershipFee").prop("disabled",false);
