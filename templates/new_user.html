@@ -137,7 +137,7 @@
       var cardLength = $(this).val().length;
       var isInt = Number.isInteger($(this).val());
 
-      if ((cardType == "Visa" || cardType == "Mastercard") && cardLength == 16) {
+      if ((cardType == "Visa" || cardType == "Mastercard" || cardType == "Discover") && cardLength == 16) {
         var formatMask = CardJs.CREDIT_CARD_NUMBER_VISA_MASK;
         var card = CardJs.applyFormatMask($(this).val(),formatMask);
         $("#cc-number-invalid").hide();
@@ -181,7 +181,6 @@
         $("#cc-cvv-invalid").hide();
       }
     });
-
 
     $("#btnCancel").click(function() {
       window.location.replace("/");
