@@ -108,7 +108,7 @@ def signup():
     return oauth.auth0.authorize_redirect(redirect_uri,screen_hint='signup')
 
 @app.route("/new", methods=['GET', 'POST'])
-# @login_required
+@login_required
 def new_user():
 
     # email = "brian.e.munroe@gmail.com"
@@ -117,7 +117,7 @@ def new_user():
 
     if has_stripe_account(email) == 1:
         app.logger.info("This email address was found in Stripe, redirecting to /update...")
-        return redirect(url_for("update_user")) 
+        return redirect(url_for("update_user"))
 
     if request.method == 'GET':
 
