@@ -163,7 +163,7 @@ def update_user():
     member = get_member_stripe_account(email)
     return render_template(
         "update_user.html", 
-        session=session.get("user"), 
+        email=email, 
         mf=mf, lf=lf, 
         member=member,
         root_server_url=app.config['ROOT_SERVER_URL'])
