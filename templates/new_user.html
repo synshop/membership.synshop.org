@@ -185,7 +185,7 @@
       var cvvLength = $(this).val().length;
       var isInt = Number.isInteger($(this).val() * 1);
 
-      if (cvvLength != 3 || isInt == false) {
+      if (cvvLength < 3 || isInt == false) {
         $("#cc-cvv-invalid").show();
         $("#btnSubmit").prop('disabled', true);
       } else {
@@ -414,7 +414,7 @@
 
         <div class="col-md-3">
           <label for="cc-cvv" class="form-label"><b>CVV</b></label>
-          <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="" minlength="3" maxlength="3" required autocomplete="on">
+          <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="" required minlength="3" maxlength="4" autocomplete="on">
           <div class="invalid-feedback" id="cc-cvv-invalid">
             Valid security code required
           </div>
