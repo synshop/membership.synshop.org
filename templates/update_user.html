@@ -51,7 +51,7 @@
     paymentFreqString[12] = "Every 12 Months";
 
     const user = {
-      email: "{{ session.userinfo.email }}",
+      email: "{{ email }}",
       fullName: "{{ member.full_name }}",
       discordId: "{{ member.discord_id }}",
       currentPaymentMethod: "{{ member.payment_method }}",
@@ -203,6 +203,57 @@
       update_summary();
     });
     
+    $("#cc-number").on("blur", function() {
+
+      var cardType = CardJs.cardTypeFromNumber($(this).val());
+      var cardLength = $(this).val().length;
+      var isInt = Number.isInteger($(this).val());
+
+      if ((cardType == "Visa" || cardType == "Mastercard") && cardLength == 16) {
+        var formatMask = CardJs.CREDIT_CARD_NUMBER_VISA_MASK;
+        var card = CardJs.applyFormatMask($(this).val(),formatMask);
+        $("#cc-number-invalid").hide();
+      } else if (cardType == "AMEX" && cardLength == 15) {
+        var formatMask = CardJs.CREDIT_CARD_NUMBER_AMEX_MASK;
+        var card = CardJs.applyFormatMask($(this).val(),formatMask);
+        $("#cc-number-invalid").hide();
+      } else {
+        $("#cc-number-invalid").show();
+        card = $(this).val();
+      }
+
+      $("#cc-number").val(card)
+
+    });
+
+    $("#cc-exp").on("blur", function() {
+
+      var expDate = $(this).val() * 1;
+      var expDateLength = $(this).val().length;
+      var isInt = Number.isInteger(expDate);
+
+      if (expDateLength != 4 || isInt == false) {
+        $("#cc-exp-invalid").show();
+      } else {
+        $("#cc-exp-invalid").hide();
+        //var mm = $(this).val().slice(0, 2);
+        //var dd = $(this).val().slice(2, 4);
+        //$(this).val(mm + "/" + dd);
+      }
+    });
+
+    $("#cc-cvv").on("blur", function() {
+
+      var cvvLength = $(this).val().length;
+      var isInt = Number.isInteger($(this).val() * 1);
+
+      if (cvvLength != 3 || isInt == false) {
+        $("#cc-cvv-invalid").show();
+      } else {
+        $("#cc-cvv-invalid").hide();
+      }
+    });
+
     $("#btnCancel").click(function() {
       window.location.replace("/");
     });
@@ -356,7 +407,7 @@
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 
 <form class="needs-validation" method="POST" name="form1" id="form1">
-  <input type="hidden" name="email" value="{{ session.userinfo.email }}"/>
+  <input type="hidden" name="email" value="{{ email }}"/>
   <input type="hidden" name="stripeId" value="{{ member.stripe_id }}"/>
   <input type="hidden" name="currentPaymentMethod" value="{{ member.payment_method }}" />
   <input type="hidden" name="deleteCurrentPaymentMethod" id="deleteCurrentPaymentMethod" value="0"/>
@@ -392,7 +443,7 @@
       <div class="row g-3" style="margin-bottom:15px;">
         <div class="col">
           <h6 style="display:inline;margin-right:10px;padding:10px;background-color: rgb(228, 228, 228);">
-            {{ session.userinfo.email }}
+            {{ email }}
           </h6> 
           (This is your login, so be sure to remember it)
         </div>
@@ -559,11 +610,32 @@
         </div>
       </div>
 
-      <div class="card-js"  data-capture-name="true" id="newPaymentMethodTable">
-        <input class="card-number"  name="card-number"  id="card-number">
-        <input class="expiry-month" name="expiry-month" id="expiry-month">
-        <input class="expiry-year"  name="expiry-year"  id="expiry-year">
-        <input class="cvc"          name="cvc"          id="cvc">
+      <div class="row g-3" style="margin-bottom:15px;" id="newPaymentMethodTable">
+
+          <div class="col-md-6">
+            <label for="cc-number" class="form-label">Card Number</label>
+            <input type="text" class="form-control" id="cc-number" placeholder="" required minlength="15" maxlength="16" autocomplete="on">
+            <div class="invalid-feedback" id="cc-number-invalid">
+              Valid card number is required
+            </div>
+          </div>
+  
+          <div class="col-md-3">
+            <label for="cc-exp" class="form-label">Expiration Date</label>
+            <input type="text" class="form-control" id="cc-exp" placeholder="mmyy" required minlength="4" maxlength="4" autocomplete="on">
+            <div class="invalid-feedback" id="cc-exp-invalid">
+              Valid expiration date required
+            </div>
+          </div>
+  
+          <div class="col-md-3">
+            <label for="cc-cvv" class="form-label">CVV</label>
+            <input type="text" class="form-control" id="cc-cvv" placeholder="" minlength="3" maxlength="3" required autocomplete="on">
+            <div class="invalid-feedback" id="cc-cvv-invalid">
+              Valid security code required
+            </div>
+          </div>
+  
       </div>
       
     </div>

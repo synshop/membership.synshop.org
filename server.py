@@ -108,9 +108,11 @@ def signup():
     return oauth.auth0.authorize_redirect(redirect_uri,screen_hint='signup')
 
 @app.route("/new", methods=['GET', 'POST'])
-@login_required
+# @login_required
 def new_user():
 
+    # email = "brian.e.munroe@gmail.com"
+    # return render_template("new_user.html", email=email, mf=50, lf=10)
     email = session["user"]["userinfo"]["email"]
 
     if has_stripe_account(email) == 1:
@@ -124,7 +126,7 @@ def new_user():
 
         mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
         lf=app.config["NEW_USER_LOCKER_FEE"]
-        return render_template("new_user.html", session=session.get("user"), mf=mf, lf=lf)
+        return render_template("new_user.html", email = email, mf=mf, lf=lf)
     else:
         create_new_member(request.form.to_dict())
         app.logger.info("New user has been created in Stripe...")
@@ -144,7 +146,7 @@ def update_user():
          else:
              app.logger.info("User has a Auth0 account but was not found in Stripe, redirecting to /new")
              flash("new stripe user")
-             return redirect(url_for('new_user', session=session.get("user"), mf=mf, lf=lf))
+             return redirect(url_for('new_user', email=email, mf=mf, lf=lf))
              
     if request.method == 'POST':
         
