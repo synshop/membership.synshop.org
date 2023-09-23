@@ -131,6 +131,15 @@
 
     $("#fullName").on("blur", function() {
       user.fullName = $("#fullName").val();
+      if ($(this).val() == "") {
+        $("#fullname-invalid").show();
+        $("#form_invalid").show();
+        $("#btnSubmit").prop('disabled', true);
+      } else {
+        $("#fullname-invalid").hide();
+        $("#form_invalid").hide();
+        $("#btnSubmit").prop('disabled', false);
+      }
     });
 
     $("#discordId").on("blur", function() {
@@ -221,16 +230,20 @@
         var formatMask = CardJs.CREDIT_CARD_NUMBER_VISA_MASK;
         var card = CardJs.applyFormatMask(card1,formatMask);
         $("#cc-number-invalid").hide();
+        $("#form_invalid").hide();
         $("#btnSubmit").prop('disabled', false);
       } else if (cardType == "AMEX" && cardLength == 15) {
         var formatMask = CardJs.CREDIT_CARD_NUMBER_AMEX_MASK;
         var card = CardJs.applyFormatMask(card1,formatMask);
         $("#cc-number-invalid").hide();
+        $("#form_invalid").hide();
         $("#btnSubmit").prop('disabled', false);
       } else {
         $("#cc-number-invalid").show();
+        $("#form_invalid").show();
         $("#btnSubmit").prop('disabled', true);
         card = $(this).val();
+       
       }
 
       $("#cc-number").val(card)
@@ -245,9 +258,11 @@
 
       if (expDateLength != 4 || isInt == false) {
         $("#cc-exp-invalid").show();
+        $("#form_invalid").show();
         $("#btnSubmit").prop('disabled', true);
       } else {
         $("#cc-exp-invalid").hide();
+        $("#form_invalid").hide();
         $("#btnSubmit").prop('disabled', false);
         var mm = $(this).val().slice(0, 2);
         var dd = $(this).val().slice(2, 4);
@@ -262,9 +277,11 @@
 
       if (cvvLength < 3 || isInt == false) {
         $("#cc-cvv-invalid").show();
+        $("#form_invalid").show();
         $("#btnSubmit").prop('disabled', true);
       } else {
         $("#cc-cvv-invalid").hide();
+        $("#form_invalid").hide();
         $("#btnSubmit").prop('disabled', false);
       }
     });
@@ -698,6 +715,9 @@
     <!-- Submit, Cancel and Delete Membership Controls -->
     <div class="card" style="width:85%;">
       <div class="card-body">
+        <div class="invalid-feedback" id="form_invalid" style="padding-bottom: 10px;">
+          Please fix the errors above before continuing
+        </div>
         <div class="row g-3">
           <div class="col-auto">
             <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit">Submit</button>
