@@ -212,18 +212,19 @@
     
     $("#cc-number").on("blur", function() {
 
-      var cardType = CardJs.cardTypeFromNumber($(this).val());
-      var cardLength = $(this).val().length;
-      var isInt = Number.isInteger($(this).val());
+      var card1 = CardJs.numbersOnlyString($(this).val());
+      var cardType = CardJs.cardTypeFromNumber(card1);
+      var cardLength = card1.length;
+      var isInt = Number.isInteger(card1);
 
       if ((cardType == "Visa" || cardType == "Mastercard" || cardType == "Discover") && cardLength == 16) {
         var formatMask = CardJs.CREDIT_CARD_NUMBER_VISA_MASK;
-        var card = CardJs.applyFormatMask($(this).val(),formatMask);
+        var card = CardJs.applyFormatMask(card1,formatMask);
         $("#cc-number-invalid").hide();
         $("#btnSubmit").prop('disabled', false);
       } else if (cardType == "AMEX" && cardLength == 15) {
         var formatMask = CardJs.CREDIT_CARD_NUMBER_AMEX_MASK;
-        var card = CardJs.applyFormatMask($(this).val(),formatMask);
+        var card = CardJs.applyFormatMask(card1,formatMask);
         $("#cc-number-invalid").hide();
         $("#btnSubmit").prop('disabled', false);
       } else {
@@ -248,9 +249,9 @@
       } else {
         $("#cc-exp-invalid").hide();
         $("#btnSubmit").prop('disabled', false);
-        //var mm = $(this).val().slice(0, 2);
-        //var dd = $(this).val().slice(2, 4);
-        //$(this).val(mm + "/" + dd);
+        var mm = $(this).val().slice(0, 2);
+        var dd = $(this).val().slice(2, 4);
+        $(this).val(mm + "/" + dd);
       }
     });
 
@@ -403,7 +404,6 @@
 </nav>
 
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
-
 <form class="needs-validation" method="POST" name="form1" id="form1">
   <input type="hidden" name="email" value="{{ email }}"/>
   <input type="hidden" name="stripeId" value="{{ member.stripe_id }}"/>
@@ -753,7 +753,7 @@
       </div>
     </div>
 
-  </form>
+</form>
 </div>
 
 </body>
