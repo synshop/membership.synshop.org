@@ -155,18 +155,21 @@ def update_member_stripe_account(user=None):
     member["email"] = user["email"]
     member["full_name"] = user["fullName"]
     member["discord_id"] = user["discordId"]
-    member["payment_freq"] = user["payFreqRadio"]
     member["current_payment_method"] = user["currentPaymentMethod"]
     member["page_is_dirty"] = user["pageIsDirty"]
 
     if "pauseMembership" in user:
         member["is_paused"] = True
-    
+
+    if "payFreqRadio" in user:
+        member["payment_freq"] = user["payFreqRadio"]
+
     if "lockerFee" in user:
         member["locker_fee"] = True
     
-    if user["donationRadio"] != "0":
-        member["donation_amount"] = user["donationRadio"]
+    if "donationRadio" in user:
+        if user["donationRadio"] != "0":
+            member["donation_amount"] = user["donationRadio"]
     
     # Always update customer metadata (Full Name, DiscordID)
     # regardless of what the status of is_page_dirty is
