@@ -189,6 +189,7 @@
       } else {
         user.membershipIsPaused = false;
         $("#membershipFee").prop("disabled",false);
+        $("#membershipFee").prop("checked",true);
         $("#lockerFee").prop("disabled",false);
         $("#paymentFreq" + user.paymentFrequency).prop("checked", true);
         $("input[name='donationRadio']").prop("disabled",false);
@@ -360,42 +361,44 @@
   <strong>Your membership information has been updated...</strong>
 </div>
 
-<nav class="navbar navbar-expand-sm sticky-top" style="background-color: #eee;">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">
-      <img src="{{ url_for('static', filename='images/logo_horizontal.png') }}" height="64px" alt="SYN Shop Logo"></a>
-    <div class="collapse navbar-collapse">
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link" href="{{ root_server_url }}/hours/">Hours</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ root_server_url }}/events/">Events</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ root_server_url }}/equipment/">Equipment</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="https://rtfm.synshop.org">RTFM</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ root_server_url }}/about/">About</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ root_server_url }}/contact/">Contact</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ root_server_url }}/donate/">Donate</a>
-        </li>
-      </ul>
-    </div>
-  </div>
-  <div>
-    <ul class="navbar-nav">
-    <li class="nav-item">
-      <a class="nav-link" href="/logout"><b>Logout</b></a>
-    </li>
-  </ul>
+<nav class="navbar navbar-expand-sm" style="background-color: #eee;">
+
+  <!-- Toggler Button -->
+  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar" aria-controls="collapsibleNavbar" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <!-- Navbar links -->
+  <div class="collapse navbar-collapse" id="collapsibleNavbar" style="margin-left:10px;">
+    <a class="navbar-brand nav-link" href="#">
+      <img src="{{ url_for('static', filename='images/logo_textless.png') }}" class="d-inline-block align-text-top" height="48px" alt="SYN Shop Logo">
+    </a>
+    <ul class="navbar-nav" style="margin-top:0px;">
+      <li class="nav-item">
+        <a class="nav-link" href="{{ root_server_url }}/hours/">Hours</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ root_server_url }}/events/">Events</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ root_server_url }}/equipment/">Equipment</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://rtfm.synshop.org">RTFM</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ root_server_url }}/about/">About</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ root_server_url }}/contact/">Contact</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ root_server_url }}/donate/">Donate</a>
+      </li>
+      <li class="nav-item">
+        <b><a class="nav-link" href="/logout">Logout</a></b>
+      </li>
+    </ul>
   </div>
 </nav>
 
@@ -409,7 +412,7 @@
   <input type="hidden" name="pageIsDirty" id="pageIsDirty" value="0"/>
   <input type="hidden" name="reallyDeleteMembership" id="reallyDeleteMembership"/>
 
-    <div class="alert alert-warning" role="alert" name="notice" id="notice" style="width:85%;">
+    <div class="alert alert-warning shadow rounded" role="alert" name="notice" id="notice" style="width:85%;">
     <h4 class="alert-heading">Update Your Membership</h4>
     <hr>
     <p class="mb-0">
@@ -584,7 +587,7 @@
           <div class="col">
             <input 
               type="button" 
-              class="btn btn-danger" 
+              class="btn btn-danger btn-block" 
               value="Delete Card?"
               name="cardDelete" 
               id="cardDelete" />
@@ -627,8 +630,8 @@
         </div>
       
       </div>
-      <div class="card-footer text-body-secondary">
-      <div class="alert alert-warning" role="alert" style="margin-top:10px;">
+      <div class="card-footer text-body-secondary container-fluid">
+      <div class="alert alert-warning shadow rounded" role="alert" style="margin-top:10px;">
         If you need to update your payment method, please delete your existing card and enter your new card 
         number, expiration date, and cvc.
       </div>
@@ -637,8 +640,7 @@
       stored on the SYN Shop servers</span>.  Stripe maintains full audited PCI compliance and you can 
       read more about <a href="https://stripe.com/help/security"> how they have implemented security precautions here</a>.
       <br/><br/>
-      <img style="display:inline;margin-left:18%;" src="{{ url_for('static', filename='images/stripe_small.png') }} "/>
-      <img style="display:inline;" src="{{ url_for('static', filename='images/medlarge_stripe_cc.png') }} "/>
+      <img class="img-fluid rounded mx-auto d-none d-lg-block" src="{{ url_for('static', filename='images/payment-icons.png') }} "/>
       </div>
     </div>
 
@@ -698,12 +700,12 @@
       <div class="card-body">
         <div class="row g-3">
           <div class="col">
-            <button type="submit" class="btn btn-lg btn-primary" name="btnSubmit" id="btnSubmit">Submit</button>
-            <button type="button" class="btn btn-lg btn-secondary" name="btnCancel" id="btnCancel">Cancel</button>
+            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit">Submit</button>
+            <button type="button" class="btn btn-lg btn-secondary btn-block" name="btnCancel" id="btnCancel">Cancel</button>
           </div>
           <div class="col" style="text-align:right;">
             <button type="button" 
-                    class="btn btn-lg btn-danger" 
+                    class="btn btn-lg btn-danger btn-block"
                     name="btnDeleteMembership" id="btnDeleteMembership" data-bs-toggle="modal" 
                     data-bs-target="#deleteMembershipModal">Delete Membership?
             </button>

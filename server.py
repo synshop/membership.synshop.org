@@ -124,7 +124,7 @@ def new_user():
 
         mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
         lf=app.config["NEW_USER_LOCKER_FEE"]
-        return render_template("new_user.html", email = email, mf=mf, lf=lf)
+        return render_template("new_user.html", email=email, mf=mf, lf=lf)
     else:
         create_new_member(request.form.to_dict())
         app.logger.info("New user has been created in Stripe...")
