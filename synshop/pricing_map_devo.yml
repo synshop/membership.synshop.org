@@ -1,0 +1,41 @@
+# Stripe product / price id lookups (Test Env)
+
+membership_fees:
+  paused        : price_0NnAEQhX2MNi0jZxhFu8Pk6T
+  free          : price_0NiSdIhX2MNi0jZx8fE7Tidx
+  monthly       : price_0NiSX0hX2MNi0jZxqe9RIqqZ
+  quarterly     : price_0NiSX0hX2MNi0jZxa3wJ4f2O
+  semiannually  : price_0NiSaKhX2MNi0jZxZdsKmHdZ
+  yearly        : price_0NiScBhX2MNi0jZxnJ0zhPup
+
+locker_fees:
+  monthly       : price_0NbbTGhX2MNi0jZxa76MmUU1
+  quarterly     : price_0NiS5uhX2MNi0jZxHGqqWXiT
+  semiannually  : price_0NiSaKhX2MNi0jZxZdsKmHdZ
+  yearly        : price_0NiS6bhX2MNi0jZx5U7S8G75
+
+donation_levels:
+  monthly: 
+    "10" : price_0NiSeshX2MNi0jZx32KGNHOA
+    "20" : price_0NiSgnhX2MNi0jZxNCCAFmV2
+    "30" : price_0NiSgnhX2MNi0jZxoo6B4mSw
+    "40" : price_0NiSgnhX2MNi0jZxNWdD6Bw2
+    "50" : price_0NiSgnhX2MNi0jZx5CX8H2l6
+  quarterly:
+    "10" : price_0NiShwhX2MNi0jZxQoR7I4RG
+    "20" : price_0NiShwhX2MNi0jZx5qNfwDrW
+    "30" : price_0NiShwhX2MNi0jZxzYW1wT5b
+    "40" : price_0NiShwhX2MNi0jZxjQxUD2uJ
+    "50" : price_0NiTLlhX2MNi0jZxmDPur7kt
+  semiannually:
+    "10" : price_0NiTNghX2MNi0jZxKRuqaYKx
+    "20" : price_0NiTNghX2MNi0jZxvLEPKNjz
+    "30" : price_0NiTNghX2MNi0jZxYPWATk3A
+    "40" : price_0NiTNghX2MNi0jZxyMoHzeT4
+    "50" : price_0NiTNghX2MNi0jZxFTk3HmvK
+  yearly:
+    "10" : price_0NiTR1hX2MNi0jZxEvODSszv
+    "20" : price_0NiTR1hX2MNi0jZxbQPImHDm
+    "30" : price_0NiTR1hX2MNi0jZx7yllYFUv
+    "40" : price_0NiTR1hX2MNi0jZxUjA8rSIj
+    "50" : price_0NiTR1hX2MNi0jZxXfKAwYay

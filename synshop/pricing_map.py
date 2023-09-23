@@ -1,6 +1,6 @@
 
 # Stripe product / price id lookups
-
+"""
 membership_fees = {
     "paused"        : "price_0NnAEQhX2MNi0jZxhFu8Pk6T",
     "free"          : "price_0NiSdIhX2MNi0jZx8fE7Tidx",
@@ -47,6 +47,7 @@ donation_levels = {
         "50" : "price_0NiTR1hX2MNi0jZxXfKAwYay"
     }
 }
+"""
 
 def freq_decode(f):
     x = {
@@ -64,11 +65,14 @@ def stripe_interval_decode(i=None,i_c=None):
     if i == "month": return i_c
     if i == "year" : return "12"
 
+def i_price_map(map=None):
+    return {v: k for k, v in map.items()}
+
 # Invert the membership_fees dictionary
-i_membership_fees = {v: k for k, v in membership_fees.items()}
+# i_membership_fees = {v: k for k, v in membership_fees.items()}
 
 # Invert the locker_fees dictionary
-i_locker_fees = {v: k for k, v in locker_fees.items()}
+# i_locker_fees = {v: k for k, v in locker_fees.items()}
 
 # Invert the donation_level dictionary after plucking the
 # given "month" sub-dict

@@ -1,6 +1,5 @@
-import stripe, time, logging
+import stripe, logging, yaml, os
 from crypto import SettingsUtil, CryptoUtil
-import synshop.pricing_map as pricing
 
 log = logging.getLogger('server.app')
 
@@ -25,6 +24,47 @@ try:
 except Exception as e:
     print('ERROR', 'Failed to decrypt "ENCRYPTED_" config variables in "config.py".  Error was:', e)
     quit()
+
+def load_price_map():
+    basedir = os.path.abspath(os.path.dirname(__file__))
+
+    if is_dev:
+        pm_file = basedir + "/pricing_map_devo.yml"
+    else:
+        pm_file = basedir + "/pricing_map_prod.yml"
+
+    with open(pm_file,"r") as file:
+        x = yaml.safe_load(file)
+        
+    return x
+
+def freq_decode(f):
+    x = {
+        "99"    : "paused",
+        "0"     : "free",
+        "1"     : "monthly",
+        "3"     : "quarterly",
+        "6"     : "semiannually",
+        "12"    : "yearly"
+    }
+
+    return x[str(f)]
+
+def stripe_interval_decode(i=None,i_c=None):
+    if i == "month": return i_c
+    if i == "year" : return "12"
+
+# Invert a given price_map dictionary
+def i_price_map(d=None):
+    return {v: k for k, v in d.items()}
+
+# Invert the donation_level dictionary after plucking the
+# given "month" sub-dict
+def reverse_map_donation_level(payment_freq=None, price_id=None):
+    plucked_donation_levels = dict(donation_levels[payment_freq])
+    i_donation_levels = {v: k for k, v in plucked_donation_levels.items()}
+    
+    return i_donation_levels[price_id]
 
 ## Stripe functions
 
@@ -294,10 +334,12 @@ def get_current_subscription_plan(c=None):
         p = stripe_subscriptions.data[0]["items"]["data"]
         i = stripe_subscriptions.data[0]["items"]["data"][0]["price"]["recurring"]["interval"]
         i_c = stripe_subscriptions.data[0]["items"]["data"][0]["price"]["recurring"]["interval_count"]
-        payment_freq = pricing.stripe_interval_decode(i,i_c)
-        d_freq = pricing.freq_decode(payment_freq)
+        payment_freq = stripe_interval_decode(i,i_c)
+        d_freq = freq_decode(payment_freq)
 
         subscriptions["payment_freq"] = payment_freq
+
+        price_map = load_price_map()
 
         for x in p:
 
@@ -306,17 +348,18 @@ def get_current_subscription_plan(c=None):
             if "membership_fee" in x["price"]["metadata"]["type"]:
                 subscriptions["membership_fee"] = True
 
-                if pricing.i_membership_fees[id] == "paused":
+                if i_price_map(price_map["membership_fees"])[id] == "paused":
                     subscriptions["is_paused"] = True
 
-                if pricing.i_membership_fees[id] == "free":
+                if i_price_map(price_map["membership_fees"])[id] == "free":
                     subscriptions["membership_type"] = "free"
             
             if "locker_fee" in x["price"]["metadata"]["type"]:
                 subscriptions["locker_fee"] = True
 
             if "donation" in x["price"]["metadata"]["type"]:
-                subscriptions["donation_amount"] = pricing.reverse_map_donation_level(d_freq,id)
+                subscriptions["donation_amount"] = 10
+                # subscriptions["donation_amount"] = reverse_map_donation_level(d_freq,id)
             
     except IndexError:
         # The member does not have an active subscription
