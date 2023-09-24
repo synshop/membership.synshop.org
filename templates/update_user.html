@@ -155,7 +155,7 @@
         if (user.ccCVVIsValid == false) {
           msgArray.push("CC CVV");
         }
-        msg = "Please fix the following fields above (either missing or invalid): " + msgArray.join(", ");
+        msg = "The following fields above are either missing or invalid, please fix: " + msgArray.join(", ");
         $("#form_invalid").html(msg);
         $("#form_invalid").show();
         $("#btnSubmit").prop('disabled', true);
