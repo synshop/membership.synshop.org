@@ -66,6 +66,10 @@
       donationAmount: {{ member.donation_amount }},
       paymentFrequency: {{ member.payment_freq }},
       charterMemberCoupon: {{ member.charter_member | lower }},
+      fullNameIsValid: true,
+      ccNumberIsValid: true,
+      ccExpDateIsValid: true,
+      ccCVVIsValid: true,
       membershipFeeSubtotal: function () {
         return (this.membershipFee * this.paymentFrequency);
       },
@@ -129,8 +133,48 @@
       }
     };
 
+    function setSubmitButtonState() {
+      if (user.fullNameIsValid == false || 
+          user.ccNumberIsValid == false || 
+          user.ccExpDateIsValid == false || 
+          user.ccCVVIsValid == false ) {
+        
+        msgArray = [];
+        if (user.fullNameIsValid == false) {
+          msgArray.push("Full Name");
+        }
+
+        if (user.ccNumberIsValid == false) {
+          msgArray.push("CC Num");
+        }
+
+        if (user.ccExpDateIsValid == false) {
+          msgArray.push("CC Exp Date");
+        }
+
+        if (user.ccCVVIsValid == false) {
+          msgArray.push("CC CVV");
+        }
+        msg = "The following fields above are either missing or invalid, please fix: <b>" + msgArray.join(", ") + "</b>";
+        $("#form_invalid").html(msg);
+        $("#form_invalid").show();
+        $("#btnSubmit").prop('disabled', true);
+      } else {
+        $("#form_invalid").hide();
+        $("#btnSubmit").prop('disabled', false);
+      }
+    };
+
     $("#fullName").on("blur", function() {
       user.fullName = $("#fullName").val();
+      if ($(this).val() == "") {
+        $("#fullname-invalid").show();
+        user.fullNameIsValid = false;
+      } else {
+        $("#fullname-invalid").hide();
+        user.fullNameIsValid = true;
+      }
+      setSubmitButtonState();
     });
 
     $("#discordId").on("blur", function() {
@@ -221,19 +265,20 @@
         var formatMask = CardJs.CREDIT_CARD_NUMBER_VISA_MASK;
         var card = CardJs.applyFormatMask(card1,formatMask);
         $("#cc-number-invalid").hide();
-        $("#btnSubmit").prop('disabled', false);
+        user.ccNumberIsValid = true;
       } else if (cardType == "AMEX" && cardLength == 15) {
         var formatMask = CardJs.CREDIT_CARD_NUMBER_AMEX_MASK;
         var card = CardJs.applyFormatMask(card1,formatMask);
         $("#cc-number-invalid").hide();
-        $("#btnSubmit").prop('disabled', false);
+        user.ccNumberIsValid = true;
       } else {
         $("#cc-number-invalid").show();
-        $("#btnSubmit").prop('disabled', true);
+        user.ccNumberIsValid = false;
         card = $(this).val();
       }
 
-      $("#cc-number").val(card)
+      $("#cc-number").val(card);
+      setSubmitButtonState();
 
     });
 
@@ -245,14 +290,16 @@
 
       if (expDateLength != 4 || isInt == false) {
         $("#cc-exp-invalid").show();
-        $("#btnSubmit").prop('disabled', true);
+        user.ccExpDateIsValid = false;
       } else {
         $("#cc-exp-invalid").hide();
-        $("#btnSubmit").prop('disabled', false);
         var mm = $(this).val().slice(0, 2);
         var dd = $(this).val().slice(2, 4);
         $(this).val(mm + "/" + dd);
+        user.ccExpDateIsValid = true;
       }
+
+      setSubmitButtonState();
     });
 
     $("#cc-cvv").on("blur", function() {
@@ -262,11 +309,12 @@
 
       if (cvvLength < 3 || isInt == false) {
         $("#cc-cvv-invalid").show();
-        $("#btnSubmit").prop('disabled', true);
+        user.ccCVVIsValid = false;
       } else {
         $("#cc-cvv-invalid").hide();
-        $("#btnSubmit").prop('disabled', false);
+        user.ccCVVIsValid = true;
       }
+      setSubmitButtonState();
     });
 
     $("#btnCancel").click(function() {
@@ -322,6 +370,7 @@
       $("#pauseMembership").prop("disabled",true);
       $('input[name=donationRadio]').attr("disabled",true);
       $('input[name=payFreqRadio]').attr("disabled",true);
+      $("#cardDelete").prop('disabled',true);
     }
 
     $("#cardDelete").click(function() {
@@ -333,6 +382,10 @@
       $("#cc-exp").attr("required","required");
       $("#cc-cvv").attr("required","required");
       $("#newPaymentMethodTable").show();
+      user.ccNumberIsValid = false;
+      user.ccExpDateIsValid = false;
+      user.ccCVVIsValid = false;
+      $("#btnSubmit").prop('disabled', true);
     });
 
     $('#form1').preventDoubleSubmission();
@@ -423,7 +476,7 @@
     </div>
 
     {% if member.membership_type == 'free' %}
-    <div class="alert alert-primary d-flex align-items-center" role="alert" style="width:85%;">
+    <div class="alert alert-primary d-flex align-items-center shadow rounded" role="alert" style="width:85%;">
     <div>
       <h3>
         You currently have a Free Membership, please reach out to the SYN Shop 
@@ -698,6 +751,9 @@
     <!-- Submit, Cancel and Delete Membership Controls -->
     <div class="card" style="width:85%;">
       <div class="card-body">
+        <div class="invalid-feedback" id="form_invalid" style="padding-bottom: 10px;">
+          Please fix the errors above before continuing
+        </div>
         <div class="row g-3">
           <div class="col-auto">
             <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit">Submit</button>
