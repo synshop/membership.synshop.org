@@ -61,6 +61,10 @@
       donationAmount: 0,
       paymentFrequency: 1,
       charterMemberCoupon: false,
+      fullNameIsValid: true,
+      ccNumberIsValid: true,
+      ccExpDateIsValid: true,
+      ccCVVIsValid: true,
       membershipFeeSubtotal: function () {
         return (this.membershipFee * this.paymentFrequency)
       },
@@ -101,18 +105,50 @@
       }
 
     };
+    
+    function setSubmitButtonState() {
+      if (user.fullNameIsValid == false || 
+          user.ccNumberIsValid == false || 
+          user.ccExpDateIsValid == false || 
+          user.ccCVVIsValid == false ) {
+
+        msgArray = [];
+        if (user.fullNameIsValid == false) {
+          msgArray.push("Full Name");
+        }
+
+        if (user.ccNumberIsValid == false) {
+          msgArray.push("CC Num");
+        }
+
+        if (user.ccExpDateIsValid == false) {
+          msgArray.push("CC Exp Date");
+        }
+
+        if (user.ccCVVIsValid == false) {
+          msgArray.push("CC CVC");
+        }
+        
+        msg = "The following fields are either missing or invalid: " + msgArray.join(", ");
+        $("#form_invalid").html(msg);
+        $("#form_invalid").show();
+        $("#btnSubmit").prop('disabled', true);
+      } else {
+        $("#form_invalid").hide();
+        $("#btnSubmit").prop('disabled', false);
+      }
+    };
 
     $("#fullName").on("blur", function() {
       user.fullName = $("#fullName").val();
       if ($(this).val() == "") {
         $("#fullname-invalid").show();
-        $("#form_invalid").show();
-        $("#btnSubmit").prop('disabled', false);
+        user.fullNameIsValid = false;
       } else {
         $("#fullname-invalid").hide();
-        $("#form_invalid").hide();
-        $("#btnSubmit").prop('disabled', true);
+        user.fullNameIsValid = true;
       }
+      setSubmitButtonState();
     });
 
     $("#discordId").on("blur", function() {
@@ -151,23 +187,20 @@
         var formatMask = CardJs.CREDIT_CARD_NUMBER_VISA_MASK;
         var card = CardJs.applyFormatMask(card1,formatMask);
         $("#cc-number-invalid").hide();
-        $("#form_invalid").hide();
-        $("#btnSubmit").prop('disabled', false);
+        user.ccNumberIsValid = true;
       } else if (cardType == "AMEX" && cardLength == 15) {
         var formatMask = CardJs.CREDIT_CARD_NUMBER_AMEX_MASK;
         var card = CardJs.applyFormatMask(card1,formatMask);
         $("#cc-number-invalid").hide();
-        $("#form_invalid").hide();
-        $("#btnSubmit").prop('disabled', false);
+        user.ccNumberIsValid = true;
       } else {
         $("#cc-number-invalid").show();
-        $("#form_invalid").show();
-        $("#btnSubmit").prop('disabled', true);
+        user.ccNumberIsValid = false;
         card = $(this).val();
-      
       }
 
-      $("#cc-number").val(card)
+      $("#cc-number").val(card);
+      setSubmitButtonState();
 
     });
 
@@ -177,19 +210,19 @@
       var expDateLength = $(this).val().length;
       var isInt = Number.isInteger(expDate);
 
-      if (expDateLength != 4 || isInt == false) {
-        $("#cc-exp-invalid").show();
-        $("#form_invalid").show();
-        $("#btnSubmit").prop('disabled', true);
-      } else {
-        $("#cc-exp-invalid").hide();
-        $("#form_invalid").hide();
-        $("#btnSubmit").prop('disabled', false);
-        var mm = $(this).val().slice(0, 2);
-        var dd = $(this).val().slice(2, 4);
-        $(this).val(mm + "/" + dd);
-      }
-    });
+    if (expDateLength != 4 || isInt == false) {
+      $("#cc-exp-invalid").show();
+      user.ccExpDateIsValid = false;
+    } else {
+      $("#cc-exp-invalid").hide();
+      var mm = $(this).val().slice(0, 2);
+      var dd = $(this).val().slice(2, 4);
+      $(this).val(mm + "/" + dd);
+      user.ccExpDateIsValid = true;
+    }
+
+    setSubmitButtonState();
+  });
 
     $("#cc-cvv").on("blur", function() {
 
@@ -198,13 +231,12 @@
 
       if (cvvLength < 3 || isInt == false) {
         $("#cc-cvv-invalid").show();
-        $("#form_invalid").show();
-        $("#btnSubmit").prop('disabled', true);
+        user.ccCVVIsValid = false;
       } else {
         $("#cc-cvv-invalid").hide();
-        $("#form_invalid").hide();
-        $("#btnSubmit").prop('disabled', false);
+        user.ccCVVIsValid = true;
       }
+      setSubmitButtonState();
     });
 
     $("#btnCancel").click(function() {
@@ -280,9 +312,9 @@
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 
   <form method="POST" name="form1" id="form1">
-  <input type="hidden" name="email" value="{{ email }}"/>
+    <input type="hidden" name="email" value="{{ email }}"/>
 
-  <div class="alert alert-warning shadow rounded" role="alert" style="width:85%;">
+    <div class="alert alert-warning shadow rounded" role="alert" style="width:85%;">
     <h4 class="alert-heading">Welcome to SYN Shop!</h4>
     <p>
       Please fill out the information below to set up your account.
@@ -293,10 +325,10 @@
       please email <a href="mailto:support@synshop.org">support@synshop.org</a> 
       or reach out in the <a href="https://synshop.org/discord">SYN Shop Discord</a>.
     </p>
-  </div>
+    </div>
 
-  <!-- User Information -->
-  <div class="card" style="width:85%;margin-top:50px;margin-bottom:25px;">
+    <!-- User Information -->
+    <div class="card" style="width:85%;margin-top:50px;margin-bottom:25px;">
     <h6 class="card-header">Member Information</h6>
     <div class="card-body">
       
@@ -322,7 +354,7 @@
       </div>
 
     </div>
-  </div>
+    </div>
 
     <!-- Subscription Information -->
     <div class="card" style="width:85%;margin-bottom:25px;">
