@@ -129,7 +129,7 @@
           msgArray.push("CC CVC");
         }
         
-        msg = "The following fields above are either missing or invalid, please fix: " + msgArray.join(", ");
+        msg = "The following fields above are either missing or invalid, please fix: <b>" + msgArray.join(", ") + "</b>";
         $("#form_invalid").html(msg);
         $("#form_invalid").show();
         $("#btnSubmit").prop('disabled', true);
