@@ -60,11 +60,9 @@ def i_price_map(d=None):
 
 # Invert the donation_level dictionary after plucking the
 # given "month" sub-dict
-def reverse_map_donation_level(payment_freq=None, price_id=None):
-    plucked_donation_levels = dict(donation_levels[payment_freq])
-    i_donation_levels = {v: k for k, v in plucked_donation_levels.items()}
-    
-    return i_donation_levels[price_id]
+def reverse_map_donation_level(d=None, id=None):
+    plucked_donation_levels = {v: k for k, v in d.items()}
+    return plucked_donation_levels[id]
 
 ## Stripe functions
 
@@ -296,25 +294,27 @@ def delete_membership(id):
     
 def build_subscription_plan(locker_fee=False,donation_amount=0,payment_freq=1,is_paused=False):
 
+    price_map = load_price_map()
+
     if (is_paused):
-        mf = {"price": pricing.membership_fees["paused"]}
+        mf = {"price": price_map["membership_fees"]["paused"]}
         return [mf,]
 
     s_list = []
-    fd = pricing.freq_decode(payment_freq)
+    fd = freq_decode(payment_freq)
     
     # Add a membership fee product
-    mf = {"price": pricing.membership_fees[fd]}
+    mf = {"price": price_map["membership_fees"][fd]}
     s_list.append(mf)
 
     # Add a locker fee product if selected
     if locker_fee:
-        lf = {"price": pricing.locker_fees[fd]}
+        lf = {"price": price_map["locker_fees"][fd]}
         s_list.append(lf)
     
     # Add a donation amount product if selected
     if int(donation_amount) != 0:
-        da = {"price": pricing.donation_levels[fd][donation_amount]}
+        da = {"price": price_map["donation_levels"][fd][donation_amount]}
         s_list.append(da)
     
     return s_list
@@ -358,8 +358,7 @@ def get_current_subscription_plan(c=None):
                 subscriptions["locker_fee"] = True
 
             if "donation" in x["price"]["metadata"]["type"]:
-                subscriptions["donation_amount"] = 10
-                # subscriptions["donation_amount"] = reverse_map_donation_level(d_freq,id)
+                subscriptions["donation_amount"] = reverse_map_donation_level(price_map["donation_levels"][d_freq],id)
             
     except IndexError:
         # The member does not have an active subscription
