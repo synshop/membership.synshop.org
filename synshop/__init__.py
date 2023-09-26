@@ -129,12 +129,13 @@ def get_member_stripe_account(email=None):
 def create_new_member(user=None):
 
     locker_fee = False
+    is_paused = False
     donation_amount = user["donationRadio"]
     payment_freq = user["payFreqRadio"]
-
-    if "lockerFeeChk" in user:
-        locker_fee = True
     
+    if user["membershipRadio"] == "m+l":
+        locker_fee = True
+
     real_card = {
         "number": user["cc-number"].replace(" ",""),
         "exp_month": user["cc-exp"],
@@ -163,7 +164,7 @@ def create_new_member(user=None):
         
         stripe.Subscription.create(
             customer = sc.id,
-            items = build_subscription_plan(locker_fee, donation_amount, payment_freq, False)
+            items = build_subscription_plan(locker_fee, donation_amount, payment_freq, is_paused)
         )
 
         return True
@@ -186,7 +187,8 @@ def update_member_stripe_account(user=None):
         "card_number"               : None,
         "exp_month"                 : 0,
         "exp_year"                  : 0,
-        "page_is_dirty"             : None
+        "page_is_dirty"             : None,
+        "membership_fees"           : None
     }
 
     member["stripe_id"] = user["stripeId"]
@@ -195,16 +197,17 @@ def update_member_stripe_account(user=None):
     member["discord_id"] = user["discordId"]
     member["current_payment_method"] = user["currentPaymentMethod"]
     member["page_is_dirty"] = user["pageIsDirty"]
+    member["membership_fees"] = user["membershipRadio"]
 
-    if "pauseMembership" in user:
+    if member["membership_fees"] == "p":
         member["is_paused"] = True
+    
+    if member["membership_fees"] == "m+l":
+        member["locker_fee"] = True
 
     if "payFreqRadio" in user:
         member["payment_freq"] = user["payFreqRadio"]
 
-    if "lockerFee" in user:
-        member["locker_fee"] = True
-    
     if "donationRadio" in user:
         if user["donationRadio"] != "0":
             member["donation_amount"] = user["donationRadio"]

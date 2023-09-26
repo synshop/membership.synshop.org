@@ -154,18 +154,22 @@
     $("#discordId").on("blur", function() {
       user.discordId = $("#discordId").val();
     });
+    
+    $("input[name='membershipRadio']").click(function() {
 
-    $("#lockerFeeChk").on("change", function() {
-      if ( $(this).prop("checked") == true) {
-        user.lockerFee = user.defaultLockerFee;
-      } else {
+      var fee = $("input[name='membershipRadio']:checked").val();
+
+      if (fee == "m") {
+        user.membershipFee = user.defaultMembershipFee;
         user.lockerFee = 0;
+      } else if (fee == "m+l") {
+        user.membershipFee = user.defaultMembershipFee;
+        user.lockerFee = user.defaultLockerFee;
       }
 
       update_summary();
-    
     });
-    
+
     $("input[name='donationRadio']").click(function() {
       user.donationAmount = $("input[name='donationRadio']:checked").val() * 1;
       update_summary();
@@ -363,14 +367,14 @@
 
         <ul class="list-group">
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" name="membershipFeeChk" id="membershipFeeChk" checked disabled>
-            <label class="form-check-label" for="membershipFeeChk">$50 - Membership Fee</label>
+            <input class="form-check-input me-1" type="radio" name="membershipRadio" value="m" id="membershipFee" checked>
+            <label class="form-check-label stretched-link" for="membershipFee">${{ mf }} / Month Membership</label>
           </li>
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" name="lockerFeeChk" id="lockerFeeChk">
-            <label class="form-check-label" for="lockerFeeChk">$10 - Optional Locker Fee</label>
+            <input class="form-check-input me-1" type="radio" name="membershipRadio" value="m+l" id="membershipFeeAndLocker">
+            <label class="form-check-label stretched-link" for="membershipFeeAndLocker">${{ mf }} / Month Membership + {{ lf }} / Month Locker Fee </label>
           </li>
-          </ul>
+        </ul>
           
       </div>
     </div>

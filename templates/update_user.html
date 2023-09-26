@@ -181,64 +181,43 @@
       user.discordId = $("#discordId").val();
     });
 
-    $("#membershipFee").on("change", function() {
+    $("input[name='membershipRadio']").click(function() {
 
       $("#pageIsDirty").val(1);
-
-      if ( $(this).prop("checked") == true) {
+      var fee = $("input[name='membershipRadio']:checked").val();
+    
+      if (fee == "m") {
+      
         user.membershipFee = user.defaultMembershipFee;
-      } else {
-        $("#lockerFee").prop("checked",false);
-        user.membershipFee = 0;
-      }
-
-      update_summary();
-    });
-
-    $("#lockerFee").on("change", function() {
-
-      $("#pageIsDirty").val(1);
-
-      if ( $(this).prop("checked") == true) {
-        $("#membershipFee").prop("checked",true);
+        user.lockerFee = 0;
+        user.membershipIsPaused = false;
+      
+      } else if (fee == "m+l") {
+      
         user.membershipFee = user.defaultMembershipFee;
         user.lockerFee = user.defaultLockerFee;
-      } else {
-        user.lockerFee = 0;
-      }
-      update_summary();
-    });
+        user.membershipIsPaused = false;
+      
+      } else if (fee == "p") {
 
-    $("#pauseMembership").on("change", function() {
-
-      $("#pageIsDirty").val(1);
-
-      if ( $(this).prop("checked") == true) {
+        user.membershipIsPaused = true;
         user.membershipFee = 0;
         user.lockerFee = 0;
-        user.membershipIsPaused = true;
-        user.donationAmount = 0;
-        $("#membershipFee").prop("checked",false);
-        $("#membershipFee").prop("disabled",true);
-
-        $("#lockerFee").prop("checked",false);
-        $("#lockerFee").prop("disabled",true);
-
         $("#donation0").prop("checked", true);
         $("input[name='donationRadio']").prop("disabled",true);
 
         $("#paymentFreq0").prop("checked", true);
         $("input[name='payFreqRadio']").prop("disabled",true);
+      };
 
-      } else {
-        user.membershipIsPaused = false;
-        $("#membershipFee").prop("disabled",false);
-        $("#membershipFee").prop("checked",true);
-        $("#lockerFee").prop("disabled",false);
-        $("#paymentFreq" + user.paymentFrequency).prop("checked", true);
+      if (fee != "p") {
+        $("#donation0").prop("checked", true);
         $("input[name='donationRadio']").prop("disabled",false);
+
+        $("#paymentFreq0").prop("checked", true);
         $("input[name='payFreqRadio']").prop("disabled",false);
       }
+
       update_summary();
     });
 
@@ -337,37 +316,28 @@
       $("#discordId").val(user.discordId);
     }
  
-    if (user.hasMembership) {
-      user.membershipFee = user.defaultMembershipFee;
-      $("#membershipFee").prop("checked",true);
-    }
-
-    if (user.hasLocker) {
-      user.lockerFee = user.defaultLockerFee;
-      $("#lockerFee").prop("checked",true);
-    }
-
     if (user.membershipIsPaused) {
       user.membershipFee = 0;
       user.lockerFee = 0;
-      $("#membershipFee").prop("checked",false);
-      $("#membershipFee").prop("disabled",true);
-      $("#lockerFee").prop("checked",false);
-      $("#lockerFee").prop("disabled",true);
+      $("#membershipFeePaused").prop("checked", true);
       $("input[name='donationRadio']").prop("disabled",true);
       $("input[name='payFreqRadio']").prop("disabled",true);
-      $("#pauseMembership").prop("checked",true);
-    }
+    } else {
+      if (user.hasLocker) {
+        user.membershipFee = user.defaultMembershipFee;
+        user.lockerFee = user.defaultLockerFee;
+        $("#membershipFeeAndLocker").prop("checked", true);
+      } else {
+        user.membershipFee = user.defaultMembershipFee;
+        user.lockerFee = 0;
+        $("#membershipFee").prop("checked", true);
+      }
+    };
 
     if (user.membershipType == "free") {
       user.membershipFee = 0;
       user.lockerFee = 0;
-      $("#membershipFee").prop("checked",false);
-      $("#membershipFee").prop("disabled",true);
-      $("#lockerFee").prop("checked",false);
-      $("#lockerFee").prop("disabled",true);
-      $("#pauseMembership").prop("checked",false);
-      $("#pauseMembership").prop("disabled",true);
+      $('input[name=membershipRadio]').attr("disabled",true);
       $('input[name=donationRadio]').attr("disabled",true);
       $('input[name=payFreqRadio]').attr("disabled",true);
       $("#cardDelete").prop('disabled',true);
@@ -517,28 +487,24 @@
 
     <!-- Subscription Information -->
     <div class="card" style="width:85%;margin-bottom:25px;">
-      <h6 class="card-header">Subscription Information</h6>
+      <h6 class="card-header">Membership Plan</h6>
       <div class="card-body">
 
         <ul class="list-group">
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" name="membershipFee" id="membershipFee">
-            <label class="form-check-label" for="membershipFee">${{ mf }} - Membership Fee</label>
+            <input class="form-check-input me-1" type="radio" name="membershipRadio" value="m" id="membershipFee">
+            <label class="form-check-label stretched-link" for="membershipFee">${{ mf }} / Month Membership</label>
           </li>
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" name="lockerFee" id="lockerFee">
-            <label class="form-check-label" for="lockerFee">$10 - Optional Locker Fee</label>
+            <input class="form-check-input me-1" type="radio" name="membershipRadio" value="m+l" id="membershipFeeAndLocker">
+            <label class="form-check-label stretched-link" for="membershipFeeAndLocker">${{ mf }} / Month Membership + {{ lf }} / Month Locker Fee </label>
           </li>
-          </ul>
-          
-          <hr/>
-
-          <ul class="list-group">
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="checkbox" name="pauseMembership" id="pauseMembership">
-            <label class="form-check-label" for="pauseMembership">Pause Membership</label>
+            <input class="form-check-input me-1" type="radio" name="membershipRadio" value="p" id="membershipFeePaused">
+            <label class="form-check-label stretched-link" for="membershipFeePaused">Pause Membership</label>
           </li>
         </ul>
+
       </div>
     </div>
 
