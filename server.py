@@ -114,7 +114,7 @@ def new_user():
     email = session["user"]["userinfo"]["email"]
 
     if has_stripe_account(email) == 1:
-        app.logger.info("This email address was found in Stripe, redirecting to /update...")
+        app.logger.info("This email address ("+ email +") was found in Stripe, redirecting to /update...")
         return redirect(url_for("update_user"))
 
     if request.method == 'GET':
@@ -127,7 +127,7 @@ def new_user():
         return render_template("new_user.html", email=email, mf=mf, lf=lf, root_server_url=app.config['ROOT_SERVER_URL'])
     else:
         create_new_member(request.form.to_dict())
-        app.logger.info("New user has been created in Stripe...")
+        app.logger.info("New user ("+ email +") has been created in Stripe for /new...")
         return redirect(url_for("welcome_user"))
 
 @app.route("/update", methods=['GET', 'POST'])
@@ -140,9 +140,9 @@ def update_user():
     
     if request.method == 'GET':
          if has_stripe_account(email) == 1:
-            app.logger.info("Fetching user info from Stripe for /update...")
+            app.logger.info("Fetching user info for ("+ email +") from Stripe for /update...")
          else:
-             app.logger.info("User has a Auth0 account but was not found in Stripe, redirecting to /new")
+             app.logger.info("User ("+ email +") has a Auth0 account but was not found in Stripe, redirecting to /new")
              flash("new stripe user")
              return redirect(url_for('new_user', email=email, mf=mf, lf=lf))
              
@@ -152,9 +152,10 @@ def update_user():
             if request.form["reallyDeleteMembership"] == "1":
                 stripe_id = request.form['stripeId']
                 delete_membership(stripe_id)
+                app.logger.info("Deleting user ("+ email +") from Stripe...")
                 return redirect(url_for('delete_user'))
 
-        app.logger.info("Updating user info in Stripe...")
+        app.logger.info("Updating user ("+ email +") info in Stripe...")
         update_member_stripe_account(request.form.to_dict())
         flash("Your information has been updated successfully")
 
