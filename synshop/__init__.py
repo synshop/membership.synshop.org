@@ -167,6 +167,7 @@ def create_new_member(user=None):
             items = build_subscription_plan(locker_fee, donation_amount, payment_freq, is_paused)
         )
 
+        log.info("Creating new member account " + sc.id)
         return True
     except Exception as e:
         log.info(e)
@@ -283,6 +284,7 @@ def update_member_stripe_account(user=None):
                 items = sp
             )
 
+            log.info("Updating Stripe information for member account " + member["stripe_id"])
         except Exception as e:
             log.info(e)
     
