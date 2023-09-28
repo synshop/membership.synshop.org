@@ -38,25 +38,26 @@ try:
     auth0_client_secret = CryptoUtil.decrypt(config.ENCRYPTED_AUTH0_CLIENT_SECRET, ENCRYPTION_KEY)
     auth0_client_id = config.AUTH0_CLIENT_ID
     auth0_domain = config.AUTH0_DOMAIN
-    is_dev = config.IS_DEV
+    
 except Exception as e:
     print('ERROR', 'Failed to decrypt "ENCRYPTED_" config variables in "config.py".  Error was:', e)
     quit()
     
 def main():
 
-    f = open(LOG_FILE , "w")
     with open(USERS_FILE, mode='r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
             try:
-                stripe.Customer.modify(
+                print(f'updating {row["full_name"]}')
+                x = stripe.Customer.modify(
                     row["stripe_id"],
                     name = row["full_name"],
+                    description = "",
                     metadata = {'discord_id': row["discord_id"]}
                 )
             except Exception as e:
-                pass
+                print(e)
             
 if __name__ == "__main__":
     main()
