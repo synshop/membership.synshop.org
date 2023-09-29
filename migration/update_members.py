@@ -49,6 +49,10 @@ def main():
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
             try:
+
+                if "#" in row["stripe_id"]:
+                    continue 
+
                 print(f'updating {row["full_name"]}')
                 x = stripe.Customer.modify(
                     row["stripe_id"],
