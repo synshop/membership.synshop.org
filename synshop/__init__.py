@@ -146,12 +146,15 @@ def create_new_member(user=None):
         "cvc": user["cc-cvv"]
     }
 
+    
+
     try:
 
         if (is_dev):
             pm = "pm_card_visa"    
         else:
-            pm = stripe.PaymentMethod.create(type="card",card=real_card)
+            # pm = stripe.PaymentMethod.create(type="card",card=real_card)
+            pm = stripe.Token.create(card=real_card)
         
         sc = stripe.Customer.create(
             email = user["email"],
