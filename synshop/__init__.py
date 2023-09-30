@@ -141,8 +141,8 @@ def create_new_member(user=None):
 
     real_card = {
         "number": user["cc-number"].replace(" ",""),
-        "exp_month": user["cc_exp_month"],
-        "exp_year": user["cc_exp_year"],
+        "exp_month": cc_exp_month,
+        "exp_year": cc_exp_year,
         "cvc": user["cc-cvv"]
     }
 
@@ -240,8 +240,8 @@ def update_member_stripe_account(user=None):
 
         real_card = {
             "number": user["cc-number"].replace(" ",""),
-            "exp_month": user["cc_exp_month"],
-            "exp_year": user["cc_exp_year"],
+            "exp_month": cc_exp_month,
+            "exp_year": cc_exp_year,
             "cvc": user["cc-cvv"]
         }
         
