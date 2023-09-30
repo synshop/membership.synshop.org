@@ -136,10 +136,13 @@ def create_new_member(user=None):
     if user["membershipRadio"] == "m+l":
         locker_fee = True
 
+    cc_exp_month = user['cc-exp'].split("/")[0]
+    cc_exp_year = user['cc-exp'].split("/")[1]
+
     real_card = {
         "number": user["cc-number"].replace(" ",""),
-        "exp_month": user["cc-exp"],
-        "exp_year": user["cc-exp"],
+        "exp_month": user["cc_exp_month"],
+        "exp_year": user["cc_exp_year"],
         "cvc": user["cc-cvv"]
     }
 
@@ -232,10 +235,13 @@ def update_member_stripe_account(user=None):
         #   3) set new PaymentMethod as Customer default
         #   4) detach the old PaymentMethod
 
+        cc_exp_month = user['cc-exp'].split("/")[0]
+        cc_exp_year = user['cc-exp'].split("/")[1]
+
         real_card = {
             "number": user["cc-number"].replace(" ",""),
-            "exp_month": user["cc-exp"],
-            "exp_year": user["cc-exp"],
+            "exp_month": user["cc_exp_month"],
+            "exp_year": user["cc_exp_year"],
             "cvc": user["cc-cvv"]
         }
         
