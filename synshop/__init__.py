@@ -146,8 +146,6 @@ def create_new_member(user=None):
         "cvc": user["cc-cvv"]
     }
 
-    
-
     try:
 
         if (is_dev):
