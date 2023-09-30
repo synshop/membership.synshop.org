@@ -152,9 +152,9 @@ def create_new_member(user=None):
             pm = "pm_card_visa"    
         else:
             # pm = stripe.PaymentMethod.create(type="card",card=real_card)
-            print("tokenizing")
+            log.info("tokenizing")
             pm = stripe.Token.create(card=real_card)
-            print(pm)
+            log.info(pm)
         
         sc = stripe.Customer.create(
             email = user["email"],
