@@ -23,9 +23,7 @@
   
   $( document ).ready(function() {
 
-    var stripe = Stripe('pk_R8rduhWmCxJ43jtu9CcvMKqwfKloN');
-    // const stripe = Stripe('pk_MP6pc5YCE8xEgXzrZJ93dfiMaOVIr');
-
+    var stripe = Stripe('{{stripe_pk}}');
     const elements = stripe.elements();
 
     const cardNum = elements.create('cardNumber');

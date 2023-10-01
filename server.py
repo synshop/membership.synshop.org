@@ -26,6 +26,7 @@ app.config['LOGOUT_REDIRECT_URL'] = config.LOGOUT_REDIRECT_URL
 app.config['ROOT_SERVER_URL'] = config.ROOT_SERVER_URL
 app.config['NEW_USER_MEMBERSHIP_FEE'] = config.NEW_USER_MEMBERSHIP_FEE
 app.config['NEW_USER_LOCKER_FEE'] = config.NEW_USER_LOCKER_FEE
+app.config['STRIPE_PK'] = config.STRIPE_PK
 
 # Load Encrypted Configuration Variables
 try:
@@ -124,7 +125,8 @@ def new_user():
 
         mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
         lf=app.config["NEW_USER_LOCKER_FEE"]
-        return render_template("new_user.html", email=email, mf=mf, lf=lf, root_server_url=app.config['ROOT_SERVER_URL'])
+        pk=app.config["STRIPE_PK"]
+        return render_template("new_user.html", email=email, mf=mf, lf=lf, root_server_url=app.config['ROOT_SERVER_URL'], stripe_pk=pk)
     else:
         create_new_member(request.form.to_dict())
         app.logger.info("New user ("+ email +") has been created in Stripe for /new...")
@@ -135,6 +137,7 @@ def new_user():
 def update_user():
     mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
     lf=app.config["NEW_USER_LOCKER_FEE"]
+    pk=app.config["STRIPE_PK"]
 
     email = session["user"]["userinfo"]["email"]
     
@@ -144,7 +147,7 @@ def update_user():
          else:
              app.logger.info("User ("+ email +") has a Auth0 account but was not found in Stripe, redirecting to /new")
              flash("new stripe user")
-             return redirect(url_for('new_user', email=email, mf=mf, lf=lf))
+             return redirect(url_for('new_user', email=email, mf=mf, lf=lf, stripe_pk=pk))
              
     if request.method == 'POST':
         
@@ -165,6 +168,7 @@ def update_user():
         email=email, 
         mf=mf, lf=lf, 
         member=member,
+        stripe_pk=pk,
         root_server_url=app.config['ROOT_SERVER_URL'])
 
 @app.route("/welcome", methods=['GET'])
