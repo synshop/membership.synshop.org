@@ -137,7 +137,7 @@
       const cardCvc = document.querySelector('#cc-cvc');
       if (cardCvc.classList.contains('StripeElement--invalid') == true) {
         user.ccCVCIsValid = false;
-        $('#cc-exp-invalid').show();
+        $('#cc-cvc-invalid').show();
       } else {
         user.ccCVCIsValid = true;
         $('#cc-cvc-invalid').hide();
@@ -215,6 +215,14 @@
     });
 
     cardNum.on('blur', function(event) {
+      setSubmitButtonState();
+    });
+
+    cardExp.on('blur', function(event) {
+      setSubmitButtonState();
+    });
+
+    cardCvc.on('blur', function(event) {
       setSubmitButtonState();
     });
 
