@@ -17,10 +17,24 @@
   -->
   <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/card-js.min.js') }}"></script>
+  <script src="https://js.stripe.com/v3/"></script>
 
   <script language="javascript">
   
   $( document ).ready(function() {
+
+    var stripe = Stripe('pk_R8rduhWmCxJ43jtu9CcvMKqwfKloN');
+    // const stripe = Stripe('pk_MP6pc5YCE8xEgXzrZJ93dfiMaOVIr');
+
+    const elements = stripe.elements();
+
+    const cardNum = elements.create('cardNumber');
+    const cardExp = elements.create('cardExpiry');
+    const cardCvc = elements.create('cardCvc');
+
+    cardNum.mount('#cc-number');
+    cardExp.mount('#cc-exp');
+    cardCvc.mount('#cc-cvc');
 
     $("#update_notice").hide()
 
@@ -107,6 +121,30 @@
     };
     
     function setSubmitButtonState() {
+
+      /*
+      const cardNum = document.querySelector('#cc-number');
+      if (cardNum.classList.contains('StripeElement--invalid') == true) {
+        user.ccNumberIsValid == false;
+      } else {
+        user.ccNumberIsValid == true;
+      }
+
+      const cardExp = document.querySelector('#cc-exp');
+      if (cardExp.classList.contains('StripeElement--invalid') == true) {
+        user.ccExpDateIsValid == false;
+      } else {
+        user.ccExpDateIsValid == true;
+      }
+
+      const cardCvc = document.querySelector('#cc-cvc');
+      if (cardCvc.classList.contains('StripeElement--invalid') == true) {
+        user.ccCVVIsValid == false;
+      } else {
+        user.ccCVVIsValid == true;
+      }
+      */
+  
       if (user.fullNameIsValid == false || 
           user.ccNumberIsValid == false || 
           user.ccExpDateIsValid == false || 
@@ -160,10 +198,8 @@
       var fee = $("input[name='membershipRadio']:checked").val();
 
       if (fee == "m") {
-        user.membershipFee = user.defaultMembershipFee;
         user.lockerFee = 0;
       } else if (fee == "m+l") {
-        user.membershipFee = user.defaultMembershipFee;
         user.lockerFee = user.defaultLockerFee;
       }
 
@@ -179,68 +215,20 @@
       user.paymentFrequency = $("input[name='payFreqRadio']:checked").val() * 1;
       update_summary();
     });
-    
-    $("#cc-number").on("blur", function() {
 
-      var card1 = CardJs.numbersOnlyString($(this).val());
-      var cardType = CardJs.cardTypeFromNumber(card1);
-      var cardLength = card1.length;
-      var isInt = Number.isInteger(card1);
+    $("#btnSubmit").click(function(e) {
 
-      if ((cardType == "Visa" || cardType == "Mastercard" || cardType == "Discover") && cardLength == 16) {
-        var formatMask = CardJs.CREDIT_CARD_NUMBER_VISA_MASK;
-        var card = CardJs.applyFormatMask(card1,formatMask);
-        $("#cc-number-invalid").hide();
-        user.ccNumberIsValid = true;
-      } else if (cardType == "AMEX" && cardLength == 15) {
-        var formatMask = CardJs.CREDIT_CARD_NUMBER_AMEX_MASK;
-        var card = CardJs.applyFormatMask(card1,formatMask);
-        $("#cc-number-invalid").hide();
-        user.ccNumberIsValid = true;
-      } else {
-        $("#cc-number-invalid").show();
-        user.ccNumberIsValid = false;
-        card = $(this).val();
-      }
+      e.preventDefault();
 
-      $("#cc-number").val(card);
-      setSubmitButtonState();
-
-    });
-
-    $("#cc-exp").on("blur", function() {
-
-      var expDate = $(this).val() * 1;
-      var expDateLength = $(this).val().length;
-      var isInt = Number.isInteger(expDate);
-
-    if (expDateLength != 4 || isInt == false) {
-      $("#cc-exp-invalid").show();
-      user.ccExpDateIsValid = false;
-    } else {
-      $("#cc-exp-invalid").hide();
-      var mm = $(this).val().slice(0, 2);
-      var dd = $(this).val().slice(2, 4);
-      $(this).val(mm + "/" + dd);
-      user.ccExpDateIsValid = true;
-    }
-
-    setSubmitButtonState();
-  });
-
-    $("#cc-cvv").on("blur", function() {
-
-      var cvvLength = $(this).val().length;
-      var isInt = Number.isInteger($(this).val() * 1);
-
-      if (cvvLength < 3 || isInt == false) {
-        $("#cc-cvv-invalid").show();
-        user.ccCVVIsValid = false;
-      } else {
-        $("#cc-cvv-invalid").hide();
-        user.ccCVVIsValid = true;
-      }
-      setSubmitButtonState();
+      var cardData = {'name': user.fullName,};
+      stripe.createToken(cardNum, cardData).then(function(result) {
+        if(result.error && result.error.message){
+          console.log(result.error.message);
+        }else{
+          $("#stripeToken").val(result.token.id);
+          $('#form1').trigger('submit');
+        }
+      });
     });
 
     $("#btnCancel").click(function() {
@@ -317,6 +305,7 @@
 
   <form method="POST" name="form1" id="form1">
     <input type="hidden" name="email" value="{{ email }}"/>
+    <input type="hidden" name="stripeToken" id="stripeToken" value="" />
 
     <div class="alert alert-warning shadow rounded" role="alert" style="width:85%;">
     <h4 class="alert-heading">Welcome to SYN Shop!</h4>
@@ -441,49 +430,47 @@
       </div>
     </div>
 
-  <!-- Payment Information -->
-  <div class="card" style="width:85%;margin-bottom:25px;">
-    <h6 class="card-header">Payment Information</h6>
-    <div class="card-body">
-      
-      <div class="row g-3" style="margin-bottom:15px;">
-
-        <div class="col-md-6">
-          <label for="cc-number" class="form-label"><b>Card Number</b></label>
-          <input type="text" class="form-control" id="cc-number" name="cc-number" placeholder="" required minlength="15" maxlength="16" autocomplete="on">
-          <div class="invalid-feedback" id="cc-number-invalid">
-            Valid card number is required
+    <!-- Payment Information -->
+    <div class="card" style="width:85%;margin-bottom:25px;">
+      <h6 class="card-header">Payment Information</h6>
+      <div class="card-body">
+        
+        <div class="row g-3" style="margin-bottom:15px;">
+          <div class="col-md-6">
+            <label for="cc-number" class="form-label"><b>Card Number</b></label>
+            <div id="cc-number" class="form-control"></div>
+            <div class="invalid-feedback" id="cc-number-invalid">
+              Valid card number is required
+            </div>
           </div>
-        </div>
 
-        <div class="col-md-3">
-          <label for="cc-exp" class="form-label"><b>Expiration Date</b></label>
-          <input type="text" class="form-control" id="cc-exp" name="cc-exp" placeholder="mmyy" required minlength="4" maxlength="4" autocomplete="on">
-          <div class="invalid-feedback" id="cc-exp-invalid">
-            Valid expiration date required
+          <div class="col-md-3">
+            <label for="cc-exp" class="form-label"><b>Expiration Date</b></label>
+            <div id="cc-exp" class="form-control"></div>
+            <div class="invalid-feedback" id="cc-exp-invalid">
+              Valid expiration date required
+            </div>
           </div>
-        </div>
 
-        <div class="col-md-3">
-          <label for="cc-cvv" class="form-label"><b>CVV</b></label>
-          <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="" required minlength="3" maxlength="4" autocomplete="on">
-          <div class="invalid-feedback" id="cc-cvv-invalid">
-            Valid security code required
+          <div class="col-md-3">
+            <label for="cc-cvc" class="form-label"><b>CVC</b></label>
+            <div id="cc-cvc" class="form-control"></div>
+            <div class="invalid-feedback" id="cc-cvc-invalid">
+              Valid security code required
+            </div>
           </div>
         </div>
 
       </div>
-
+      <div class="card-footer text-body-secondary container-fluid">
+        Membership payments are processed via the <a href="https://stripe.com/">Stripe.com</a> payment 
+        processing system and <span style="font-weight: bold;">your full credit card information is never 
+        stored on the SYN Shop servers</span>.  Stripe maintains full audited PCI compliance and you can 
+        read more about <a href="https://stripe.com/help/security"> how they have implemented security precautions here</a>.
+        <br/><br/>
+        <img class="img-fluid rounded mx-auto d-none d-lg-block" src="{{ url_for('static', filename='images/payment-icons.png') }} "/>
+      </div>
     </div>
-    <div class="card-footer text-body-secondary container-fluid">
-      Membership payments are processed via the <a href="https://stripe.com/">Stripe.com</a> payment 
-      processing system and <span style="font-weight: bold;">your full credit card information is never 
-      stored on the SYN Shop servers</span>.  Stripe maintains full audited PCI compliance and you can 
-      read more about <a href="https://stripe.com/help/security"> how they have implemented security precautions here</a>.
-      <br/><br/>
-      <img class="img-fluid rounded mx-auto d-none d-lg-block" src="{{ url_for('static', filename='images/payment-icons.png') }} "/>
-    </div>
-  </div>
 
     <!-- Membership Summary -->
     <div class="card" style="width:85%;margin-bottom:15px;">

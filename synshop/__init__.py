@@ -136,26 +136,11 @@ def create_new_member(user=None):
     if user["membershipRadio"] == "m+l":
         locker_fee = True
 
-    cc_exp_month = user['cc-exp'].split("/")[0]
-    cc_exp_year = user['cc-exp'].split("/")[1]
-
-    real_card = {
-        "number": user["cc-number"].replace(" ",""),
-        "exp_month": cc_exp_month,
-        "exp_year": cc_exp_year,
-        "cvc": user["cc-cvv"]
-    }
+    real_card = {"token" : user["stripeToken"]}
 
     try:
 
-        if (is_dev):
-            pm = "pm_card_visa"    
-        else:
-            # pm = stripe.PaymentMethod.create(type="card",card=real_card)
-            log.info("tokenizing")
-            pm = stripe.Token.create(card=real_card)
-            log.info(pm)
-        
+        pm = stripe.PaymentMethod.create(type="card",card=real_card)
         sc = stripe.Customer.create(
             email = user["email"],
             name = user["fullName"],
@@ -238,31 +223,9 @@ def update_member_stripe_account(user=None):
         #   3) set new PaymentMethod as Customer default
         #   4) detach the old PaymentMethod
 
-        cc_exp_month = user['cc-exp'].split("/")[0]
-        cc_exp_year = user['cc-exp'].split("/")[1]
-
-        real_card = {
-            "number": user["cc-number"].replace(" ",""),
-            "exp_month": cc_exp_month,
-            "exp_year": cc_exp_year,
-            "cvc": user["cc-cvv"]
-        }
-        
         try:
-            if (is_dev):               
-
-                if user["cc-number"].replace(" ","") == "424242424242":
-                    pm = "pm_card_visa"
-                elif user["cc-number"].replace(" ","") == "5555555555552222":
-                    pm = "pm_card_mastercard"
-                elif user["cc-number"].replace(" ","") == "6011111111111117":
-                    pm = "pm_card_discover"
-                elif user["cc-number"].replace(" ","") == "378282246310005":
-                    pm = "pm_card_amex"
-
-            else:
-                pm = stripe.PaymentMethod.create(type="card",card=real_card)
-
+            real_card = {"token" : user["stripeToken"]}
+            pm = stripe.PaymentMethod.create(type="card",card=real_card)
             x = stripe.PaymentMethod.attach(pm,customer=member["stripe_id"])
 
             stripe.Customer.modify(

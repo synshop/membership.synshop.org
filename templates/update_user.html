@@ -15,10 +15,24 @@
   <link href="{{ url_for('static', filename='css/card-js.min.css') }}" rel="stylesheet">
   <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/card-js.min.js') }}"></script>
+  <script src="https://js.stripe.com/v3/"></script>
 
   <script language="javascript">
  
   $( document ).ready(function() {
+
+    var stripe = Stripe('pk_R8rduhWmCxJ43jtu9CcvMKqwfKloN');
+    // const stripe = Stripe('pk_MP6pc5YCE8xEgXzrZJ93dfiMaOVIr');
+
+    const elements = stripe.elements();
+
+    const cardNum = elements.create('cardNumber');
+    const cardExp = elements.create('cardExpiry');
+    const cardCvc = elements.create('cardCvc');
+
+    cardNum.mount('#cc-number');
+    cardExp.mount('#cc-exp');
+    cardCvc.mount('#cc-cvc');
 
     $("#update_notice").hide()
 
@@ -134,6 +148,9 @@
     };
 
     function setSubmitButtonState() {
+
+      return true;
+
       if (user.fullNameIsValid == false || 
           user.ccNumberIsValid == false || 
           user.ccExpDateIsValid == false || 
@@ -235,6 +252,7 @@
       update_summary();
     });
     
+    /*
     $("#cc-number").on("blur", function() {
 
       var card1 = CardJs.numbersOnlyString($(this).val());
@@ -297,6 +315,22 @@
       }
       setSubmitButtonState();
     });
+    */
+
+    $("#btnSubmit").click(function(e) {
+
+      e.preventDefault();
+
+      var cardData = {'name': user.fullName,};
+      stripe.createToken(cardNum, cardData).then(function(result) {
+        if(result.error && result.error.message){
+          console.log(result.error.message);
+        }else{
+          $("#stripeToken").val(result.token.id);
+          $('#form1').trigger('submit');
+        }
+      });
+    });
 
     $("#btnCancel").click(function() {
       window.location.replace("/");
@@ -354,10 +388,10 @@
       $("#cc-exp").attr("required","required");
       $("#cc-cvv").attr("required","required");
       $("#newPaymentMethodTable").show();
-      user.ccNumberIsValid = false;
-      user.ccExpDateIsValid = false;
-      user.ccCVVIsValid = false;
-      $("#btnSubmit").prop('disabled', true);
+      // user.ccNumberIsValid = false;
+      // user.ccExpDateIsValid = false;
+      // user.ccCVVIsValid = false;
+      // $("#btnSubmit").prop('disabled', true);
     });
 
     $('#form1').preventDoubleSubmission();
@@ -436,6 +470,7 @@
   <input type="hidden" name="deleteCurrentPaymentMethod" id="deleteCurrentPaymentMethod" value="0"/>
   <input type="hidden" name="pageIsDirty" id="pageIsDirty" value="0"/>
   <input type="hidden" name="reallyDeleteMembership" id="reallyDeleteMembership"/>
+  <input type="hidden" name="stripeToken" id="stripeToken" value="" />
 
     <div class="alert alert-warning shadow rounded" role="alert" name="notice" id="notice" style="width:85%;">
     <h4 class="alert-heading">Update Your Membership</h4>
@@ -616,40 +651,31 @@
         </div>
 
         <div class="row g-3" id="newPaymentMethodTable" style="margin-bottom:15px;">
-
           <div class="col-md-6">
-            <label for="cc-number" class="form-label">Card Number</label>
-            <input type="text" 
-                  class="form-control" 
-                  id="cc-number" 
-                  name="cc-number" 
-                  placeholder="" 
-                  minlength="15" 
-                  maxlength="16" 
-                  autocomplete="on" />
+            <label for="cc-number" class="form-label"><b>Card Number</b></label>
+            <div id="cc-number" class="form-control"></div>
             <div class="invalid-feedback" id="cc-number-invalid">
               Valid card number is required
             </div>
           </div>
-
+  
           <div class="col-md-3">
-            <label for="cc-exp" class="form-label">Expiration Date</label>
-            <input type="text" class="form-control" id="cc-exp" name="cc-exp" placeholder="mmyy" minlength="4" maxlength="4" autocomplete="on">
+            <label for="cc-exp" class="form-label"><b>Expiration Date</b></label>
+            <div id="cc-exp" class="form-control"></div>
             <div class="invalid-feedback" id="cc-exp-invalid">
               Valid expiration date required
             </div>
           </div>
-
+  
           <div class="col-md-3">
-            <label for="cc-cvv" class="form-label">CVV</label>
-            <input type="text" class="form-control" id="cc-cvv" name="cc-cvv" placeholder="" minlength="3" maxlength="4" autocomplete="on">
-            <div class="invalid-feedback" id="cc-cvv-invalid">
+            <label for="cc-cvc" class="form-label"><b>CVC</b></label>
+            <div id="cc-cvc" class="form-control"></div>
+            <div class="invalid-feedback" id="cc-cvc-invalid">
               Valid security code required
             </div>
           </div>
-
         </div>
-      
+
       </div>
       <div class="card-footer text-body-secondary container-fluid">
       <div class="alert alert-warning shadow rounded" role="alert" style="margin-top:10px;">
