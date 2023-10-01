@@ -315,19 +315,25 @@
     });
     */
 
+    cardNum.on('blur', function(event) {
+      $("#pageIsDirty").value(1);
+    });
+
     $("#btnSubmit").click(function(e) {
 
-      e.preventDefault();
+      if ($("#pageIsDirty").val() != "0"){
+        e.preventDefault();
 
-      var cardData = {'name': user.fullName,};
-      stripe.createToken(cardNum, cardData).then(function(result) {
-        if(result.error && result.error.message){
-          console.log(result.error.message);
-        }else{
-          $("#stripeToken").val(result.token.id);
-          $('#form1').trigger('submit');
-        }
-      });
+        var cardData = {'name': user.fullName,};
+        stripe.createToken(cardNum, cardData).then(function(result) {
+          if(result.error && result.error.message){
+            console.log(result.error.message);
+          }else{
+            $("#stripeToken").val(result.token.id);
+            $('#form1').trigger('submit');
+          }
+        });
+      }
     });
 
     $("#btnCancel").click(function() {
