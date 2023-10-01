@@ -102,7 +102,9 @@ def get_member_stripe_account(email=None):
     member["stripe_id"] = c['id']
     member["email"] = c['email']
     member["full_name"] = c['name']
-    member['payment_method'] = c['invoice_settings']['default_payment_method']
+    # member['payment_method'] = c['invoice_settings']['default_payment_method']
+    member['payment_method'] = c['default_source']
+                                 
     member["charter_member"] = is_charter_member(c)
     
     if "discord_id" in c['metadata']:
