@@ -102,8 +102,11 @@ def get_member_stripe_account(email=None):
     member["stripe_id"] = c['id']
     member["email"] = c['email']
     member["full_name"] = c['name']
-    # member['payment_method'] = c['invoice_settings']['default_payment_method']
-    member['payment_method'] = c['default_source']
+
+    if c['invoice_settings']['default_payment_method'] == None:
+        member['payment_method'] = c['default_source']
+    else:
+        member['payment_method'] = c['invoice_settings']['default_payment_method']
                                  
     member["charter_member"] = is_charter_member(c)
     
