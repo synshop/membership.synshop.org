@@ -147,13 +147,38 @@
 
     function setSubmitButtonState() {
 
-      return true;
+      const cardNum = document.querySelector('#cc-number');
+      if (cardNum.classList.contains('StripeElement--invalid') == true) {
+        user.ccNumberIsValid = false;
+        $('#cc-number-invalid').show();
+      } else {
+        user.ccNumberIsValid = true;
+        $('#cc-number-invalid').hide();
+      }
+
+      const cardExp = document.querySelector('#cc-exp');
+      if (cardExp.classList.contains('StripeElement--invalid') == true) {
+        user.ccExpDateIsValid = false;
+        $('#cc-exp-invalid').show();
+      } else {
+        user.ccExpDateIsValid = true;
+        $('#cc-exp-invalid').hide();
+      }
+
+      const cardCvc = document.querySelector('#cc-cvc');
+      if (cardCvc.classList.contains('StripeElement--invalid') == true) {
+        user.ccCVCIsValid = false;
+        $('#cc-cvc-invalid').show();
+      } else {
+        user.ccCVCIsValid = true;
+        $('#cc-cvc-invalid').hide();
+      }
 
       if (user.fullNameIsValid == false || 
           user.ccNumberIsValid == false || 
           user.ccExpDateIsValid == false || 
-          user.ccCVVIsValid == false ) {
-        
+          user.ccCVCIsValid == false ) {
+
         msgArray = [];
         if (user.fullNameIsValid == false) {
           msgArray.push("Full Name");
@@ -167,9 +192,10 @@
           msgArray.push("CC Exp Date");
         }
 
-        if (user.ccCVVIsValid == false) {
-          msgArray.push("CC CVV");
+        if (user.ccCVCIsValid == false) {
+          msgArray.push("CC CVC");
         }
+        
         msg = "The following fields above are either missing or invalid, please fix: <b>" + msgArray.join(", ") + "</b>";
         $("#form_invalid").html(msg);
         $("#form_invalid").show();
@@ -179,7 +205,7 @@
         $("#btnSubmit").prop('disabled', false);
       }
     };
-
+  
     $("#fullName").on("blur", function() {
       user.fullName = $("#fullName").val();
       if ($(this).val() == "") {
@@ -251,7 +277,15 @@
     });
     
     cardNum.on('blur', function(event) {
-      $("#deleteCurrentPaymentMethod").val("1");
+      setSubmitButtonState();
+    });
+
+    cardExp.on('blur', function(event) {
+      setSubmitButtonState();
+    });
+
+    cardCvc.on('blur', function(event) {
+      setSubmitButtonState();
     });
 
     $("#btnCardDelete").click(function() {
@@ -261,7 +295,7 @@
       $("#currentPaymentMethodTable").hide();
       $("#cc-number").attr("required","required");
       $("#cc-exp").attr("required","required");
-      $("#cc-cvv").attr("required","required");
+      $("#cc-cvc").attr("required","required");
       $("#newPaymentMethodTable").show();
     });
 
@@ -275,6 +309,7 @@
         stripe.createToken(cardNum, cardData).then(function(result) {
           if(result.error && result.error.message){
             console.log(result.error.message);
+            setSubmitButtonState();
           }else{
             $("#stripeToken").val(result.token.id);
             $('#form1').trigger('submit');
@@ -329,17 +364,6 @@
       $('input[name=payFreqRadio]').attr("disabled",true);
       $("#btnCardDelete").prop('disabled',true);
     }
-
-    $("#cardDelete").click(function() {
-      console.log("deleting card " + user.currentPaymentMethod );
-      $("#deleteCurrentPaymentMethod").val("1");
-      $("#paymentMethodHeader").html("Payment Information - Add New Payment Method");
-      $("#currentPaymentMethodTable").hide();
-      $("#cc-number").attr("required","required");
-      $("#cc-exp").attr("required","required");
-      $("#cc-cvv").attr("required","required");
-      $("#newPaymentMethodTable").show();
-    });
 
     $('#form1').preventDoubleSubmission();
     update_summary();
