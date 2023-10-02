@@ -14,12 +14,7 @@ except Exception as e:
 try:
     ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get()
     is_dev = config.IS_DEV
-    
-    if is_dev:
-        stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN_DEVO, ENCRYPTION_KEY)
-    else:
-        stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN_PROD, ENCRYPTION_KEY)
-
+    stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN, ENCRYPTION_KEY)
     stripe.api_version = config.STRIPE_VERSION
 except Exception as e:
     print('ERROR', 'Failed to decrypt "ENCRYPTED_" config variables in "config.py".  Error was:', e)
