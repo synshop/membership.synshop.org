@@ -250,78 +250,13 @@
       update_summary();
     });
     
-    /*
-    $("#cc-number").on("blur", function() {
-
-      var card1 = CardJs.numbersOnlyString($(this).val());
-      var cardType = CardJs.cardTypeFromNumber(card1);
-      var cardLength = card1.length;
-      var isInt = Number.isInteger(card1);
-
-      if ((cardType == "Visa" || cardType == "Mastercard" || cardType == "Discover") && cardLength == 16) {
-        var formatMask = CardJs.CREDIT_CARD_NUMBER_VISA_MASK;
-        var card = CardJs.applyFormatMask(card1,formatMask);
-        $("#cc-number-invalid").hide();
-        user.ccNumberIsValid = true;
-      } else if (cardType == "AMEX" && cardLength == 15) {
-        var formatMask = CardJs.CREDIT_CARD_NUMBER_AMEX_MASK;
-        var card = CardJs.applyFormatMask(card1,formatMask);
-        $("#cc-number-invalid").hide();
-        user.ccNumberIsValid = true;
-      } else {
-        $("#cc-number-invalid").show();
-        user.ccNumberIsValid = false;
-        card = $(this).val();
-      }
-
-      $("#cc-number").val(card);
-      setSubmitButtonState();
-
-    });
-
-    $("#cc-exp").on("blur", function() {
-
-      var expDate = $(this).val() * 1;
-      var expDateLength = $(this).val().length;
-      var isInt = Number.isInteger(expDate);
-
-      if (expDateLength != 4 || isInt == false) {
-        $("#cc-exp-invalid").show();
-        user.ccExpDateIsValid = false;
-      } else {
-        $("#cc-exp-invalid").hide();
-        var mm = $(this).val().slice(0, 2);
-        var dd = $(this).val().slice(2, 4);
-        $(this).val(mm + "/" + dd);
-        user.ccExpDateIsValid = true;
-      }
-
-      setSubmitButtonState();
-    });
-
-    $("#cc-cvv").on("blur", function() {
-
-      var cvvLength = $(this).val().length;
-      var isInt = Number.isInteger($(this).val() * 1);
-
-      if (cvvLength < 3 || isInt == false) {
-        $("#cc-cvv-invalid").show();
-        user.ccCVVIsValid = false;
-      } else {
-        $("#cc-cvv-invalid").hide();
-        user.ccCVVIsValid = true;
-      }
-      setSubmitButtonState();
-    });
-    */
-
     cardNum.on('blur', function(event) {
-      $("#pageIsDirty").val(1);
+      $("#deleteCurrentPaymentMethod").val("1");
     });
 
     $("#btnSubmit").click(function(e) {
 
-      if ($("#pageIsDirty").val() != "0"){
+      if ($("#deleteCurrentPaymentMethod").val() != "0"){
         e.preventDefault();
 
         var cardData = {'name': user.fullName,};
@@ -392,10 +327,6 @@
       $("#cc-exp").attr("required","required");
       $("#cc-cvv").attr("required","required");
       $("#newPaymentMethodTable").show();
-      // user.ccNumberIsValid = false;
-      // user.ccExpDateIsValid = false;
-      // user.ccCVVIsValid = false;
-      // $("#btnSubmit").prop('disabled', true);
     });
 
     $('#form1').preventDoubleSubmission();
