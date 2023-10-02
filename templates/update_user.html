@@ -330,6 +330,17 @@
       $("#btnCardDelete").prop('disabled',true);
     }
 
+    $("#cardDelete").click(function() {
+      console.log("deleting card " + user.currentPaymentMethod );
+      $("#deleteCurrentPaymentMethod").val("1");
+      $("#paymentMethodHeader").html("Payment Information - Add New Payment Method");
+      $("#currentPaymentMethodTable").hide();
+      $("#cc-number").attr("required","required");
+      $("#cc-exp").attr("required","required");
+      $("#cc-cvv").attr("required","required");
+      $("#newPaymentMethodTable").show();
+    });
+
     $('#form1').preventDoubleSubmission();
     update_summary();
 
