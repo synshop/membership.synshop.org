@@ -239,95 +239,48 @@
     });
 
     $("input[name='donationRadio']").click(function() {
-      $("#pageIsDirty").val(1);
+      $("#pageIsDirty").val("1");
       user.donationAmount = $("input[name='donationRadio']:checked").val() * 1;
       update_summary();
     });
 
     $("input[name='payFreqRadio']").click(function() {
-      $("#pageIsDirty").val(1);
+      $("#pageIsDirty").val("1");
       user.paymentFrequency = $("input[name='payFreqRadio']:checked").val() * 1;
       update_summary();
     });
     
-    /*
-    $("#cc-number").on("blur", function() {
-
-      var card1 = CardJs.numbersOnlyString($(this).val());
-      var cardType = CardJs.cardTypeFromNumber(card1);
-      var cardLength = card1.length;
-      var isInt = Number.isInteger(card1);
-
-      if ((cardType == "Visa" || cardType == "Mastercard" || cardType == "Discover") && cardLength == 16) {
-        var formatMask = CardJs.CREDIT_CARD_NUMBER_VISA_MASK;
-        var card = CardJs.applyFormatMask(card1,formatMask);
-        $("#cc-number-invalid").hide();
-        user.ccNumberIsValid = true;
-      } else if (cardType == "AMEX" && cardLength == 15) {
-        var formatMask = CardJs.CREDIT_CARD_NUMBER_AMEX_MASK;
-        var card = CardJs.applyFormatMask(card1,formatMask);
-        $("#cc-number-invalid").hide();
-        user.ccNumberIsValid = true;
-      } else {
-        $("#cc-number-invalid").show();
-        user.ccNumberIsValid = false;
-        card = $(this).val();
-      }
-
-      $("#cc-number").val(card);
-      setSubmitButtonState();
-
+    cardNum.on('blur', function(event) {
+      $("#deleteCurrentPaymentMethod").val("1");
     });
 
-    $("#cc-exp").on("blur", function() {
-
-      var expDate = $(this).val() * 1;
-      var expDateLength = $(this).val().length;
-      var isInt = Number.isInteger(expDate);
-
-      if (expDateLength != 4 || isInt == false) {
-        $("#cc-exp-invalid").show();
-        user.ccExpDateIsValid = false;
-      } else {
-        $("#cc-exp-invalid").hide();
-        var mm = $(this).val().slice(0, 2);
-        var dd = $(this).val().slice(2, 4);
-        $(this).val(mm + "/" + dd);
-        user.ccExpDateIsValid = true;
-      }
-
-      setSubmitButtonState();
+    $("#btnCardDelete").click(function() {
+      console.log("deleting card " + user.currentPaymentMethod );
+      $("#deleteCurrentPaymentMethod").val("1");
+      $("#paymentMethodHeader").html("Payment Information - Add New Payment Method");
+      $("#currentPaymentMethodTable").hide();
+      $("#cc-number").attr("required","required");
+      $("#cc-exp").attr("required","required");
+      $("#cc-cvv").attr("required","required");
+      $("#newPaymentMethodTable").show();
     });
-
-    $("#cc-cvv").on("blur", function() {
-
-      var cvvLength = $(this).val().length;
-      var isInt = Number.isInteger($(this).val() * 1);
-
-      if (cvvLength < 3 || isInt == false) {
-        $("#cc-cvv-invalid").show();
-        user.ccCVVIsValid = false;
-      } else {
-        $("#cc-cvv-invalid").hide();
-        user.ccCVVIsValid = true;
-      }
-      setSubmitButtonState();
-    });
-    */
 
     $("#btnSubmit").click(function(e) {
 
-      e.preventDefault();
+      if ($("#deleteCurrentPaymentMethod").val() == "1"){
+        e.preventDefault();
+        console.log("tokenizing new payment method...");
 
-      var cardData = {'name': user.fullName,};
-      stripe.createToken(cardNum, cardData).then(function(result) {
-        if(result.error && result.error.message){
-          console.log(result.error.message);
-        }else{
-          $("#stripeToken").val(result.token.id);
-          $('#form1').trigger('submit');
-        }
-      });
+        var cardData = {'name': user.fullName,};
+        stripe.createToken(cardNum, cardData).then(function(result) {
+          if(result.error && result.error.message){
+            console.log(result.error.message);
+          }else{
+            $("#stripeToken").val(result.token.id);
+            $('#form1').trigger('submit');
+          }
+        });
+      }
     });
 
     $("#btnCancel").click(function() {
@@ -374,7 +327,7 @@
       $('input[name=membershipRadio]').attr("disabled",true);
       $('input[name=donationRadio]').attr("disabled",true);
       $('input[name=payFreqRadio]').attr("disabled",true);
-      $("#cardDelete").prop('disabled',true);
+      $("#btnCardDelete").prop('disabled',true);
     }
 
     $("#cardDelete").click(function() {
@@ -386,10 +339,6 @@
       $("#cc-exp").attr("required","required");
       $("#cc-cvv").attr("required","required");
       $("#newPaymentMethodTable").show();
-      // user.ccNumberIsValid = false;
-      // user.ccExpDateIsValid = false;
-      // user.ccCVVIsValid = false;
-      // $("#btnSubmit").prop('disabled', true);
     });
 
     $('#form1').preventDoubleSubmission();
@@ -446,9 +395,6 @@
       </li>
       <li class="nav-item">
         <a class="nav-link" href="{{ root_server_url }}/about/">About</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="{{ root_server_url }}/contact/">Contact</a>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="{{ root_server_url }}/donate/">Donate</a>
@@ -643,8 +589,8 @@
               type="button" 
               class="btn btn-danger btn-block" 
               value="Delete Card?"
-              name="cardDelete" 
-              id="cardDelete" />
+              name="btnCardDelete" 
+              id="btnCardDelete" />
           </div>
         </div>
 

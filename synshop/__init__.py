@@ -14,12 +14,7 @@ except Exception as e:
 try:
     ENCRYPTION_KEY = SettingsUtil.EncryptionKey.get()
     is_dev = config.IS_DEV
-    
-    if is_dev:
-        stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN_DEVO, ENCRYPTION_KEY)
-    else:
-        stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN_PROD, ENCRYPTION_KEY)
-
+    stripe.api_key = CryptoUtil.decrypt(config.ENCRYPTED_STRIPE_TOKEN, ENCRYPTION_KEY)
     stripe.api_version = config.STRIPE_VERSION
 except Exception as e:
     print('ERROR', 'Failed to decrypt "ENCRYPTED_" config variables in "config.py".  Error was:', e)
@@ -102,8 +97,12 @@ def get_member_stripe_account(email=None):
     member["stripe_id"] = c['id']
     member["email"] = c['email']
     member["full_name"] = c['name']
-    # member['payment_method'] = c['invoice_settings']['default_payment_method']
-    member['payment_method'] = c['default_source']
+
+    if c['invoice_settings']['default_payment_method'] == None:
+        member['payment_method'] = c['default_source']
+    else:
+        member['payment_method'] = c['invoice_settings']['default_payment_method']
+                                 
     member["charter_member"] = is_charter_member(c)
     
     if "discord_id" in c['metadata']:
