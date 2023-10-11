@@ -8,3 +8,4 @@ migration/*.csv
 gunicorn1*.sh
 venv
 migration/*.txt*
+.vscode*
