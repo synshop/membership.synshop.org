@@ -19,13 +19,9 @@ except Exception as e:
     print('ERROR', 'Failed to decrypt "ENCRYPTED_" config variables in "config.py".  Error was:', e)
     quit()
 
-def load_price_map():
+def load_price_map(m=None):
     basedir = os.path.abspath(os.path.dirname(__file__))
-
-    if is_dev:
-        pm_file = basedir + "/pricing_map_devo.yml"
-    else:
-        pm_file = basedir + "/pricing_map_prod.yml"
+    pm_file = basedir + "/" + m
 
     with open(pm_file,"r") as file:
         x = yaml.safe_load(file)
@@ -270,7 +266,7 @@ def delete_membership(id):
     
 def build_subscription_plan(locker_fee=False,donation_amount=0,payment_freq=1,is_paused=False):
 
-    price_map = load_price_map()
+    price_map = load_price_map(config.PRICE_MAP)
 
     if (is_paused):
         mf = {"price": price_map["membership_fees"]["paused"]}
