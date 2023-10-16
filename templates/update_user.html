@@ -473,7 +473,12 @@
         </div>
 
         <div class="col-md-3">
-          <label for="fullName" class="form-label">Full Name</label>
+          <label for="fullName" class="form-label">
+            <b>Full Name</b>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-asterisk text-danger" viewBox="0 0 16 16">
+              <path d="M8 0a1 1 0 0 1 1 1v5.268l4.562-2.634a1 1 0 1 1 1 1.732L10 8l4.562 2.634a1 1 0 1 1-1 1.732L9 9.732V15a1 1 0 1 1-2 0V9.732l-4.562 2.634a1 1 0 1 1-1-1.732L6 8 1.438 5.366a1 1 0 0 1 1-1.732L7 6.268V1a1 1 0 0 1 1-1z"/>
+            </svg>
+          </label>
           <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Full Name (required)" required autocomplete="on">
           <div class="invalid-feedback" id="fullname-invalid">
             Please enter your full name
@@ -481,10 +486,45 @@
         </div>
 
         <div class="col-md-4">
-          <label for="discordId" class="form-label">Discord ID</label>
+          <label for="discordId" class="form-label">
+            <b>Discord Username</b>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#discordUsernameModal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+            </svg>
+            </a>
+          </label>
           <input type="text" class="form-control" id="discordId" name="discordId" placeholder="Optional, but recommended" placeholder="">
-        </div>
+          <!-- Discord Username Modal-->
+          <div class="modal modal-lg" tabindex="-1" id="discordUsernameModal">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-body">
+                  <h3>What is my Discord Username?</h3>
+                  <hr/>
+                  <p>
+                    SYN Shop is a really big fan of using <a href="https://discord.com">Discord</a> for our 
+                    near-real time communications about what is happening at 
+                    the shop, etc.
+                  </p>
+                  <p>
+                    You can sign up for SYN Shop's Discord by <a href="https://synshop.org/discord">visiting this link</a>
+                  </p>
+                  <p>
+                    This <a href="https://support.discord.com/hc/en-us/articles/12620128861463">
+                    blog post</a> does a pretty good job of explaining what your Discord Username might have 
+                    been and how to retrieve it, but a picture is worth a thousand words:
+                  </p>
+                  <div class="text-center">
+                    <img src="/static/images/final-profile-card.png" width="640" class="img-fluid" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
+        </div>
       </div> 
 
     </div>
