@@ -19,7 +19,7 @@ except Exception as e:
     print('ERROR', 'Failed to decrypt "ENCRYPTED_" config variables in "config.py".  Error was:', e)
     quit()
 
-def load_price_map(m=None):
+def load_pricing_map(m=None):
     basedir = os.path.abspath(os.path.dirname(__file__))
     pm_file = basedir + "/" + m
 
@@ -266,27 +266,27 @@ def delete_membership(id):
     
 def build_subscription_plan(locker_fee=False,donation_amount=0,payment_freq=1,is_paused=False):
 
-    price_map = load_price_map(config.PRICE_MAP)
+    pricing_map = load_pricing_map(config.PRICING_MAP)
 
     if (is_paused):
-        mf = {"price": price_map["membership_fees"]["paused"]}
+        mf = {"price": pricing_map["membership_fees"]["paused"]}
         return [mf,]
 
     s_list = []
     fd = freq_decode(payment_freq)
     
     # Add a membership fee product
-    mf = {"price": price_map["membership_fees"][fd]}
+    mf = {"price": pricing_map["membership_fees"][fd]}
     s_list.append(mf)
 
     # Add a locker fee product if selected
     if locker_fee:
-        lf = {"price": price_map["locker_fees"][fd]}
+        lf = {"price": pricing_map["locker_fees"][fd]}
         s_list.append(lf)
     
     # Add a donation amount product if selected
     if int(donation_amount) != 0:
-        da = {"price": price_map["donation_levels"][fd][donation_amount]}
+        da = {"price": pricing_map["donation_levels"][fd][donation_amount]}
         s_list.append(da)
     
     return s_list
@@ -311,7 +311,7 @@ def get_current_subscription_plan(c=None):
 
         subscriptions["payment_freq"] = payment_freq
 
-        price_map = load_price_map()
+        pricing_map = load_pricing_map(config.PRICING_MAP)
 
         for x in p:
 
@@ -320,17 +320,17 @@ def get_current_subscription_plan(c=None):
             if "membership_fee" in x["price"]["metadata"]["type"]:
                 subscriptions["membership_fee"] = True
 
-                if i_price_map(price_map["membership_fees"])[id] == "paused":
+                if i_price_map(pricing_map["membership_fees"])[id] == "paused":
                     subscriptions["is_paused"] = True
 
-                if i_price_map(price_map["membership_fees"])[id] == "free":
+                if i_price_map(pricing_map["membership_fees"])[id] == "free":
                     subscriptions["membership_type"] = "free"
             
             if "locker_fee" in x["price"]["metadata"]["type"]:
                 subscriptions["locker_fee"] = True
 
             if "donation" in x["price"]["metadata"]["type"]:
-                subscriptions["donation_amount"] = reverse_map_donation_level(price_map["donation_levels"][d_freq],id)
+                subscriptions["donation_amount"] = reverse_map_donation_level(pricing_map["donation_levels"][d_freq],id)
             
     except IndexError:
         # The member does not have an active subscription
