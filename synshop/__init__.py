@@ -150,7 +150,8 @@ def create_new_member(user=None):
         
         stripe.Subscription.create(
             customer = sc.id,
-            items = build_subscription_plan(locker_fee, donation_amount, payment_freq, is_paused)
+            items = build_subscription_plan(locker_fee, donation_amount, payment_freq, is_paused),
+            proration_behavior = 'none'
         )
 
         log.info("Creating new member account " + sc.id)
@@ -248,7 +249,8 @@ def update_member_stripe_account(user=None):
 
             stripe.Subscription.create(
                 customer = member["stripe_id"],
-                items = sp
+                items = sp,
+                proration_behavior = 'none'
             )
 
             log.info("Updating Stripe information for member account " + member["stripe_id"])
@@ -344,7 +346,7 @@ def cancel_current_subscription_plan(c=None):
     try:
         for s in stripe.Subscription.list(customer=c, limit=10):
             print("canceling current subscriptions...")
-            stripe.Subscription.delete(s.id, prorate=True)
+            stripe.Subscription.delete(s.id, prorate=False)
     except Exception as e:
         log.info(e)
         pass
