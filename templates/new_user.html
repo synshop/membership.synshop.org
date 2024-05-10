@@ -69,10 +69,10 @@
       donationAmount: 0,
       paymentFrequency: 1,
       charterMemberCoupon: false,
-      fullNameIsValid: true,
-      ccNumberIsValid: true,
-      ccExpDateIsValid: true,
-      ccCVCIsValid: true,
+      fullNameIsValid: false,
+      ccNumberIsValid: false,
+      ccExpDateIsValid: false,
+      ccCVCIsValid: false,
       membershipFeeSubtotal: function () {
         return (this.membershipFee * this.paymentFrequency)
       },
@@ -189,6 +189,7 @@
 
     $("#discordId").on("blur", function() {
       user.discordId = $("#discordId").val();
+      setSubmitButtonState();
     });
     
     $("input[name='membershipRadio']").click(function() {
@@ -234,6 +235,7 @@
       stripe.createToken(cardNum, cardData).then(function(result) {
         if(result.error && result.error.message){
           console.log(result.error.message);
+          setSubmitButtonState();
         }else{
           $("#stripeToken").val(result.token.id);
           $('#form1').trigger('submit');
