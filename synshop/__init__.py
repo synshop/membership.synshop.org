@@ -151,7 +151,7 @@ def create_new_member(user=None):
         stripe.Subscription.create(
             customer = sc.id,
             items = build_subscription_plan(locker_fee, donation_amount, payment_freq, is_paused),
-            proration_behavior='none'
+            proration_behavior = 'none'
         )
 
         log.info("Creating new member account " + sc.id)
@@ -250,7 +250,7 @@ def update_member_stripe_account(user=None):
             stripe.Subscription.create(
                 customer = member["stripe_id"],
                 items = sp,
-                proration_behavior='none'
+                proration_behavior = 'none'
             )
 
             log.info("Updating Stripe information for member account " + member["stripe_id"])
