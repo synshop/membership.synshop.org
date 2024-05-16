@@ -311,11 +311,16 @@
             console.log(result.error.message);
             setSubmitButtonState();
           } else {
+            $("#btnSubmit").html("Updating...");
             $("#btnSubmit").prop('disabled', true);
             $("#stripeToken").val(result.token.id);
             $('#form1').trigger('submit');
           }
         });
+      } else {
+          $("#btnSubmit").html("Updating...");
+            $("#btnSubmit").prop('disabled', true);
+            $('#form1').trigger('submit');
       }
     });
 
