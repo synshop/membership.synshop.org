@@ -438,6 +438,7 @@
 
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 <form class="needs-validation" method="POST" name="form1" id="form1">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
   <input type="hidden" name="email" value="{{ email }}"/>
   <input type="hidden" name="stripeId" value="{{ member.stripe_id }}"/>
   <input type="hidden" name="currentPaymentMethod" value="{{ member.payment_method }}" />

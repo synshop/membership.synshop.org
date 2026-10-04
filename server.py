@@ -6,6 +6,7 @@ from authlib.integrations.flask_client import OAuth
 from authlib.integrations.base_client.errors import OAuthError
 
 from flask import Flask, redirect, render_template, request, session, url_for, flash
+from flask_wtf.csrf import CSRFProtect
 from crypto import SettingsUtil, CryptoUtil
 from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account, delete_membership, get_stripe_customer, get_default_payment_method
 
@@ -27,6 +28,13 @@ app.config['ROOT_SERVER_URL'] = config.ROOT_SERVER_URL
 app.config['NEW_USER_MEMBERSHIP_FEE'] = config.NEW_USER_MEMBERSHIP_FEE
 app.config['NEW_USER_LOCKER_FEE'] = config.NEW_USER_LOCKER_FEE
 app.config['STRIPE_PK'] = config.STRIPE_PK
+
+# Session Cookie / CSRF Protection
+# SESSION_COOKIE_SECURE requires HTTPS; set it to False in config.py for plain http://localhost development
+app.config['SESSION_COOKIE_SECURE'] = getattr(config, 'SESSION_COOKIE_SECURE', True)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['WTF_CSRF_TIME_LIMIT'] = None
 
 # Load Encrypted Configuration Variables
 try:
@@ -58,6 +66,8 @@ def login_required(f):
 
     return decorated_function
 
+csrf = CSRFProtect(app)
+
 oauth = OAuth(app)
 
 oauth.register(
@@ -74,7 +84,9 @@ oauth.register(
 def index():
     return render_template("index.html", root_server_url=app.config['ROOT_SERVER_URL'])
 
+# Auth0 redirects here; the OAuth state parameter already protects this route
 @app.route("/callback", methods=["GET", "POST"])
+@csrf.exempt
 def callback():
     try:
         token = oauth.auth0.authorize_access_token()
