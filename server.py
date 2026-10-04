@@ -7,7 +7,7 @@ from authlib.integrations.base_client.errors import OAuthError
 
 from flask import Flask, redirect, render_template, request, session, url_for, flash
 from crypto import SettingsUtil, CryptoUtil
-from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account, delete_membership
+from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account, delete_membership, get_stripe_customer, get_default_payment_method
 
 app = Flask(__name__) 
 
@@ -128,7 +128,10 @@ def new_user():
         pk=app.config["STRIPE_PK"]
         return render_template("new_user.html", email=email, mf=mf, lf=lf, root_server_url=app.config['ROOT_SERVER_URL'], stripe_pk=pk)
     else:
-        create_new_member(request.form.to_dict())
+        # Use the verified Auth0 email, not the one posted by the browser
+        form = request.form.to_dict()
+        form['email'] = email
+        create_new_member(form)
         app.logger.info(f'{email} has been created in Stripe for /new...')
         return redirect(url_for("welcome_user"))
 
@@ -150,16 +153,26 @@ def update_user():
              return redirect(url_for('new_user', email=email, mf=mf, lf=lf, stripe_pk=pk))
              
     if request.method == 'POST':
-        
-        if "reallyDeleteMembership" in request.form:
-            if request.form["reallyDeleteMembership"] == "1":
-                stripe_id = request.form['stripeId']
-                delete_membership(stripe_id)
-                app.logger.info(f'Deleting {email} from Stripe...')
-                return redirect(url_for('delete_user'))
+
+        # Never trust the Stripe IDs posted by the browser; always act on
+        # the customer that belongs to the logged-in user's email.
+        customer = get_stripe_customer(email)
+        if customer is None:
+            app.logger.info(f'{email} POSTed to /update but was NOT found in Stripe, redirecting to /new')
+            return redirect(url_for('new_user'))
+
+        form = request.form.to_dict()
+        form['email'] = email
+        form['stripeId'] = customer['id']
+        form['currentPaymentMethod'] = get_default_payment_method(customer)
+
+        if form.get("reallyDeleteMembership") == "1":
+            delete_membership(customer['id'])
+            app.logger.info(f'Deleting {email} from Stripe...')
+            return redirect(url_for('delete_user'))
 
         app.logger.info(f'Updating info for {email} in Stripe...')
-        update_member_stripe_account(request.form.to_dict())
+        update_member_stripe_account(form)
         flash("Your information has been updated successfully")
 
     member = get_member_stripe_account(email)

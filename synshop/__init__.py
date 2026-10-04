@@ -60,6 +60,17 @@ def has_stripe_account(email=None):
     sr=stripe.Customer.search(query='email: "' + email + '"', limit=1)
     return len(sr['data'])
 
+def get_stripe_customer(email=None):
+    sr=stripe.Customer.search(query='email: "' + email + '"', limit=1)
+    if len(sr['data']) == 0:
+        return None
+    return sr['data'][0]
+
+def get_default_payment_method(c=None):
+    if c['invoice_settings']['default_payment_method'] == None:
+        return c['default_source']
+    return c['invoice_settings']['default_payment_method']
+
 def is_charter_member(c=None):
     
     if c["discount"] and "coupon" in c['discount']:
@@ -88,16 +99,12 @@ def get_member_stripe_account(email=None):
         "is_paused"             : False
     }
 
-    c = stripe.Customer.search(query='email: "' + email + '"', limit=1)['data'][0]
+    c = get_stripe_customer(email)
     member["stripe_id"] = c['id']
     member["email"] = c['email']
     member["full_name"] = c['name']
+    member['payment_method'] = get_default_payment_method(c)
 
-    if c['invoice_settings']['default_payment_method'] == None:
-        member['payment_method'] = c['default_source']
-    else:
-        member['payment_method'] = c['invoice_settings']['default_payment_method']
-                                 
     member["charter_member"] = is_charter_member(c)
     
     if "discord_id" in c['metadata']:
