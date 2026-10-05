@@ -53,6 +53,26 @@ and `PRICING_MAP` both change depending on whether you are developing or running
 ### Run the Development Server
 When developing locally, you'll need to make sure you use a DNS name that Auth0 can send a redirect to.  We use the Caddy HTTP server to proxy requests and handle the TLS termination, but you could technically use `http://localhost:8080` as long as you configure the callback for Auth0 to allow this.
 
+#### Local HTTPS with mkcert
+The session cookie is marked `Secure`, so the simplest local setup is to have `server.py` serve HTTPS itself using a locally-trusted certificate from [mkcert](https://github.com/FiloSottile/mkcert):
+
+```bash
+$ sudo apt install mkcert libnss3-tools
+$ mkcert -install                     # one time: trust the local CA in your system and browsers
+$ cd membership.synshop.org
+$ mkdir -p certs
+$ mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem localhost 127.0.0.1 ::1
+```
+
+Then add the following to `config.py` (`certs/` is gitignored):
+
+```python
+DEV_SSL_CERT = "certs/localhost.pem"
+DEV_SSL_KEY = "certs/localhost-key.pem"
+```
+
+The development server will now listen on `https://localhost:8000`.  In the Auth0 development application, add `https://localhost:8000/callback` to the Allowed Callback URLs and `https://localhost:8000` to the Allowed Logout URLs.
+
 To start the development server, activate the environment and run the `server.py` script:
 
 ```bash

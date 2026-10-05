@@ -206,4 +206,9 @@ def delete_user():
     return render_template("deleted.html", root_server_url=app.config['ROOT_SERVER_URL'])
 
 if __name__ == "__main__":
-    app.run(host="::", port=8000, debug=True)
+    # Serve HTTPS locally when a dev cert is configured (see README)
+    ssl_context = None
+    if getattr(config, 'DEV_SSL_CERT', None) and getattr(config, 'DEV_SSL_KEY', None):
+        ssl_context = (config.DEV_SSL_CERT, config.DEV_SSL_KEY)
+
+    app.run(host="::", port=8000, debug=True, ssl_context=ssl_context)
