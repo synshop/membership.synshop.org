@@ -179,8 +179,8 @@ def update_user():
         form['currentPaymentMethod'] = get_default_payment_method(customer)
 
         if form.get("reallyDeleteMembership") == "1":
-            delete_membership(customer['id'])
             app.logger.info(f'Deleting {email} from Stripe...')
+            delete_membership(customer['id'])
             return redirect(url_for('delete_user'))
 
         app.logger.info(f'Updating info for {email} in Stripe...')
