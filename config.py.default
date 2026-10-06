@@ -15,6 +15,14 @@ LOG_FILE='/var/log/membership.log'
 LOGOUT_REDIRECT_URL="/"
 ROOT_SERVER_URL="http://127.0.0.1:4000"
 
+# Only send the session cookie over HTTPS. Set to False for plain http://localhost development
+SESSION_COOKIE_SECURE = True
+
+# Development only: serve HTTPS from `python server.py` with a local cert (see README).
+# Leave unset in production, where gunicorn sits behind a TLS-terminating proxy.
+# DEV_SSL_CERT = "certs/localhost.pem"
+# DEV_SSL_KEY = "certs/localhost-key.pem"
+
 NEW_USER_MEMBERSHIP_FEE = 50
 NEW_USER_LOCKER_FEE = 10
 

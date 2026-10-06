@@ -6,8 +6,9 @@ from authlib.integrations.flask_client import OAuth
 from authlib.integrations.base_client.errors import OAuthError
 
 from flask import Flask, redirect, render_template, request, session, url_for, flash
+from flask_wtf.csrf import CSRFProtect
 from crypto import SettingsUtil, CryptoUtil
-from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account, delete_membership
+from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account, delete_membership, get_stripe_customer, get_default_payment_method
 
 app = Flask(__name__) 
 
@@ -27,6 +28,13 @@ app.config['ROOT_SERVER_URL'] = config.ROOT_SERVER_URL
 app.config['NEW_USER_MEMBERSHIP_FEE'] = config.NEW_USER_MEMBERSHIP_FEE
 app.config['NEW_USER_LOCKER_FEE'] = config.NEW_USER_LOCKER_FEE
 app.config['STRIPE_PK'] = config.STRIPE_PK
+
+# Session Cookie / CSRF Protection
+# SESSION_COOKIE_SECURE requires HTTPS; set it to False in config.py for plain http://localhost development
+app.config['SESSION_COOKIE_SECURE'] = getattr(config, 'SESSION_COOKIE_SECURE', True)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['WTF_CSRF_TIME_LIMIT'] = None
 
 # Load Encrypted Configuration Variables
 try:
@@ -58,6 +66,8 @@ def login_required(f):
 
     return decorated_function
 
+csrf = CSRFProtect(app)
+
 oauth = OAuth(app)
 
 oauth.register(
@@ -74,7 +84,9 @@ oauth.register(
 def index():
     return render_template("index.html", root_server_url=app.config['ROOT_SERVER_URL'])
 
+# Auth0 redirects here; the OAuth state parameter already protects this route
 @app.route("/callback", methods=["GET", "POST"])
+@csrf.exempt
 def callback():
     try:
         token = oauth.auth0.authorize_access_token()
@@ -128,7 +140,10 @@ def new_user():
         pk=app.config["STRIPE_PK"]
         return render_template("new_user.html", email=email, mf=mf, lf=lf, root_server_url=app.config['ROOT_SERVER_URL'], stripe_pk=pk)
     else:
-        create_new_member(request.form.to_dict())
+        # Use the verified Auth0 email, not the one posted by the browser
+        form = request.form.to_dict()
+        form['email'] = email
+        create_new_member(form)
         app.logger.info(f'{email} has been created in Stripe for /new...')
         return redirect(url_for("welcome_user"))
 
@@ -150,16 +165,26 @@ def update_user():
              return redirect(url_for('new_user', email=email, mf=mf, lf=lf, stripe_pk=pk))
              
     if request.method == 'POST':
-        
-        if "reallyDeleteMembership" in request.form:
-            if request.form["reallyDeleteMembership"] == "1":
-                stripe_id = request.form['stripeId']
-                delete_membership(stripe_id)
-                app.logger.info(f'Deleting {email} from Stripe...')
-                return redirect(url_for('delete_user'))
+
+        # Never trust the Stripe IDs posted by the browser; always act on
+        # the customer that belongs to the logged-in user's email.
+        customer = get_stripe_customer(email)
+        if customer is None:
+            app.logger.info(f'{email} POSTed to /update but was NOT found in Stripe, redirecting to /new')
+            return redirect(url_for('new_user'))
+
+        form = request.form.to_dict()
+        form['email'] = email
+        form['stripeId'] = customer['id']
+        form['currentPaymentMethod'] = get_default_payment_method(customer)
+
+        if form.get("reallyDeleteMembership") == "1":
+            app.logger.info(f'Deleting {email} from Stripe...')
+            delete_membership(customer['id'])
+            return redirect(url_for('delete_user'))
 
         app.logger.info(f'Updating info for {email} in Stripe...')
-        update_member_stripe_account(request.form.to_dict())
+        update_member_stripe_account(form)
         flash("Your information has been updated successfully")
 
     member = get_member_stripe_account(email)
@@ -181,4 +206,9 @@ def delete_user():
     return render_template("deleted.html", root_server_url=app.config['ROOT_SERVER_URL'])
 
 if __name__ == "__main__":
-    app.run(host="::", port=8000, debug=True)
+    # Serve HTTPS locally when a dev cert is configured (see README)
+    ssl_context = None
+    if getattr(config, 'DEV_SSL_CERT', None) and getattr(config, 'DEV_SSL_KEY', None):
+        ssl_context = (config.DEV_SSL_CERT, config.DEV_SSL_KEY)
+
+    app.run(host="::", port=8000, debug=True, ssl_context=ssl_context)
