@@ -236,7 +236,23 @@ def update_member_stripe_account(user=None):
 
     has_payment_method = bool(member["current_payment_method"])
 
-    if user["deleteCurrentPaymentMethod"] == "1":
+    if user["deleteCurrentPaymentMethod"] == "1" and not user.get("stripeToken"):
+
+        # Canceled members may remove their card without replacing it
+        if member["membership_fees"] != "c":
+            log.info("Member account " + member["stripe_id"] + " tried to remove their card without canceling")
+            return False
+
+        try:
+            if member["current_payment_method"]:
+                stripe.PaymentMethod.detach(member["current_payment_method"])
+            has_payment_method = False
+            log.info("Removed payment method for member account " + member["stripe_id"])
+        except Exception as e:
+            log.info(e)
+            return False
+
+    elif user["deleteCurrentPaymentMethod"] == "1":
 
         # Member adds a new card:
         #   1) create a new PaymentMethod

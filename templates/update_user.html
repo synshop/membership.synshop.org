@@ -327,6 +327,22 @@
         $("#deleteCurrentPaymentMethod").val("0");
       }
 
+      // Canceled members can remove their card without adding a new one
+      if (user.hasPaymentMethod && !user.cardEntered && $("#deleteCurrentPaymentMethod").val() == "1") {
+        if ($("input[name='membershipRadio']:checked").val() != "c") {
+          e.preventDefault();
+          $("#form_invalid").html("Please enter a new card in <b>Payment Information</b>, or choose <b>Cancel Membership</b> to remove your card.");
+          $("#form_invalid").show();
+          return;
+        }
+        e.preventDefault();
+        $("#stripeToken").val("");
+        $("#btnSubmit").html("Updating...");
+        $("#btnSubmit").prop('disabled', true);
+        $('#form1').trigger('submit');
+        return;
+      }
+
       if ($("#deleteCurrentPaymentMethod").val() == "1"){
         e.preventDefault();
         console.log("tokenizing new payment method...");
@@ -336,6 +352,8 @@
           if (result.error && result.error.message){
             console.log(result.error.message);
             setSubmitButtonState();
+            $("#form_invalid").html(result.error.message);
+            $("#form_invalid").show();
           } else {
             $("#btnSubmit").html("Updating...");
             $("#btnSubmit").prop('disabled', true);
