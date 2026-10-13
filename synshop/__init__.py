@@ -134,7 +134,7 @@ def get_member_stripe_account(email=None):
             member["last4"] = paymentMethod["card"]["last4"]
             member["has_payment_method"] = True
     except stripe.error.StripeError as e:
-        log.info("Unable to retrieve payment method for " + member["stripe_id"] + ": " + str(e))
+        log.info("Unable to retrieve payment method for " + member["full_name"] + " Stripe ID: " + member["stripe_id"] + ". Error is: " + str(e))
 
     if not member["has_payment_method"]:
         member["payment_method"] = None
