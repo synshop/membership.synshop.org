@@ -292,7 +292,7 @@ def update_member_stripe_account(user=None):
 
             # Free memberships are granted by the board, never selected from the form
             if str(member["payment_freq"]) not in ("1", "3", "6", "12"):
-                log.info("Member account " + member["stripe_id"] + " sent an invalid payment frequency: " + str(member["payment_freq"]))
+                log.info("Member account  " + member["full_name"] + " Stripe ID: " + member["stripe_id"] + " sent an invalid payment frequency: " + str(member["payment_freq"]))
                 return False
 
             sp = build_subscription_plan(
