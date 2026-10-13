@@ -287,7 +287,7 @@ def update_member_stripe_account(user=None):
             # Paid plans need a card; check before touching the current
             # subscription so a failed change doesn't leave the member without one
             if not has_payment_method:
-                log.info("Member account " + member["stripe_id"] + " has no payment method, not creating a subscription")
+                log.info("Member  " + member["full_name"] + " Stripe ID: " + member["stripe_id"] + " has no payment method, not creating a subscription")
                 return False
 
             # Free memberships are granted by the board, never selected from the form
