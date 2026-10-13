@@ -309,7 +309,7 @@
     $("#btnSubmit").click(function(e) {
 
       if (!user.hasPaymentMethod && !user.cardEntered) {
-        var fee = $("input[name='membershipRadio']:checked").val();
+        const fee = $("input[name='membershipRadio']:checked").val();
         if ($("#pageIsDirty").val() == "1" && (fee == "m" || fee == "m+l")) {
           e.preventDefault();
           $("#form_invalid").html("Please enter a card in <b>Payment Information</b> before choosing a membership plan.");
