@@ -232,7 +232,7 @@ def update_member_stripe_account(user=None):
 
         # Canceled members may remove their card without replacing it
         if member["membership_fees"] != "c":
-            log.info("Member account " + member["stripe_id"] + " tried to remove their card without canceling")
+            log.info("Member " + member["full_name"] + " Stripe ID: " + member["stripe_id"] + " tried to remove their card without canceling")
             return False
 
         try:
