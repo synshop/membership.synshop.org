@@ -126,12 +126,12 @@ def get_member_stripe_account(email=None):
         return member
 
     try:
-        x = stripe.Customer.retrieve_payment_method(member["stripe_id"],member["payment_method"])
-        if x["type"] == "card":
-            member["payment_brand"] = x["card"]["brand"]
-            member["exp_month"] = x["card"]["exp_month"]
-            member["exp_year"] = x["card"]["exp_year"]
-            member["last4"] = x["card"]["last4"]
+        paymentMethod = stripe.Customer.retrieve_payment_method(member["stripe_id"],member["payment_method"])
+        if paymentMethod["type"] == "card":
+            member["payment_brand"] = paymentMethod["card"]["brand"]
+            member["exp_month"] = paymentMethod["card"]["exp_month"]
+            member["exp_year"] = paymentMethod["card"]["exp_year"]
+            member["last4"] = paymentMethod["card"]["last4"]
             member["has_payment_method"] = True
     except stripe.error.StripeError as e:
         log.info("Unable to retrieve payment method for " + member["stripe_id"] + ": " + str(e))
