@@ -239,7 +239,7 @@ def update_member_stripe_account(user=None):
             if member["current_payment_method"]:
                 stripe.PaymentMethod.detach(member["current_payment_method"])
             has_payment_method = False
-            log.info("Removed payment method for member account " + member["stripe_id"])
+            log.info("Removed payment method for member account  " + member["full_name"] + " Stripe ID: " + member["stripe_id"] )
         except Exception as e:
             log.info(e)
             return False
