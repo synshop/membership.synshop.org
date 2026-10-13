@@ -277,7 +277,7 @@ def update_member_stripe_account(user=None):
             # Canceled members keep their Stripe customer, just no subscription
             if member["membership_fees"] == "c":
                 cancel_current_subscription_plan(member["stripe_id"])
-                log.info("Canceled subscription for member account " + member["stripe_id"])
+                log.info("Canceled subscription for member account  " + member["full_name"] + " Stripe ID: " + member["stripe_id"])
                 return True
 
             if member["membership_fees"] not in ("m", "m+l"):
