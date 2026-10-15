@@ -1,7 +1,6 @@
 # Stripe product / price id lookups (Test Env)
 
 membership_fees:
-  paused        : price_0NnAEQhX2MNi0jZxhFu8Pk6T
   free          : price_0NiSdIhX2MNi0jZx8fE7Tidx
   monthly       : price_0NiSX0hX2MNi0jZxqe9RIqqZ
   quarterly     : price_0NiSX0hX2MNi0jZxa3wJ4f2O
@@ -11,7 +10,7 @@ membership_fees:
 locker_fees:
   monthly       : price_0NbbTGhX2MNi0jZxa76MmUU1
   quarterly     : price_0NiS5uhX2MNi0jZxHGqqWXiT
-  semiannually  : price_0NiSaKhX2MNi0jZxZdsKmHdZ
+  semiannually  : price_0NiS6LhX2MNi0jZxLKYQTHWJ
   yearly        : price_0NiS6bhX2MNi0jZx5U7S8G75
 
 donation_levels:

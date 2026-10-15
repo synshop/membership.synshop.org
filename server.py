@@ -184,8 +184,11 @@ def update_user():
             return redirect(url_for('delete_user'))
 
         app.logger.info(f'Updating info for {email} in Stripe...')
-        update_member_stripe_account(form)
-        flash("Your information has been updated successfully")
+        if update_member_stripe_account(form):
+            flash("Your information has been updated successfully", "success")
+        else:
+            app.logger.info(f'Update for {email} did not complete')
+            flash("We couldn't update your membership. Please check your payment information, or contact support@synshop.org.", "error")
 
     member = get_member_stripe_account(email)
     return render_template(

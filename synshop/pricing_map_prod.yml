@@ -1,7 +1,6 @@
 # Stripe product / price id lookups (Prod Env)
 
 membership_fees:
-  paused        : price_0Ntw5YhX2MNi0jZxBhNnreLl
   free          : price_0Ntw5YhX2MNi0jZxVLMI224M
   monthly       : price_0Ntw5ZhX2MNi0jZxLtUedCmB
   quarterly     : price_0Ntw5ZhX2MNi0jZxxGJbIzFM

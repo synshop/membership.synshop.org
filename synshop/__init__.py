@@ -30,7 +30,6 @@ def load_pricing_map(m=None):
 
 def freq_decode(f):
     x = {
-        "99"    : "paused",
         "0"     : "free",
         "1"     : "monthly",
         "3"     : "quarterly",
@@ -96,7 +95,9 @@ def get_member_stripe_account(email=None):
         "donation_amount"       : 0,
         "payment_freq"          : 0,
         "charter_member"        : False,
-        "is_paused"             : False
+        "has_subscription"      : False,
+        "subscription_status"   : None,
+        "has_payment_method"    : False
     }
 
     c = get_stripe_customer(email)
@@ -117,21 +118,32 @@ def get_member_stripe_account(email=None):
     member["locker_fee"] = subs["locker_fee"]
     member["donation_amount"] = subs["donation_amount"]
     member["payment_freq"] = subs["payment_freq"]
-    member["is_paused"] = subs["is_paused"]
-    
-    x = stripe.Customer.retrieve_payment_method(member["stripe_id"],member["payment_method"])
-    
-    member["payment_brand"] = x["card"]["brand"]
-    member["exp_month"] = x["card"]["exp_month"]
-    member["exp_year"] = x["card"]["exp_year"]
-    member["last4"] = x["card"]["last4"]
+    member["has_subscription"] = subs["has_subscription"]
+    member["subscription_status"] = subs["subscription_status"]
+
+    # A customer without a subscription may not have a card on file either
+    if member["payment_method"] is None:
+        return member
+
+    try:
+        paymentMethod = stripe.Customer.retrieve_payment_method(member["stripe_id"],member["payment_method"])
+        if paymentMethod["type"] == "card":
+            member["payment_brand"] = paymentMethod["card"]["brand"]
+            member["exp_month"] = paymentMethod["card"]["exp_month"]
+            member["exp_year"] = paymentMethod["card"]["exp_year"]
+            member["last4"] = paymentMethod["card"]["last4"]
+            member["has_payment_method"] = True
+    except stripe.error.StripeError as e:
+        log.info("Unable to retrieve payment method for " + member["full_name"] + " Stripe ID: " + member["stripe_id"] + ". Error is: " + str(e))
+
+    if not member["has_payment_method"]:
+        member["payment_method"] = None
 
     return member
 
 def create_new_member(user=None):
 
     locker_fee = False
-    is_paused = False
     donation_amount = user["donationRadio"]
     payment_freq = user["payFreqRadio"]
     
@@ -157,7 +169,7 @@ def create_new_member(user=None):
         
         stripe.Subscription.create(
             customer = sc.id,
-            items = build_subscription_plan(locker_fee, donation_amount, payment_freq, is_paused),
+            items = build_subscription_plan(locker_fee, donation_amount, payment_freq),
             proration_behavior = 'none'
         )
 
@@ -175,7 +187,6 @@ def update_member_stripe_account(user=None):
         "full_name"                 : None,
         "discord_id"                : None,
         "current_payment_method"    : None,
-        "is_paused"                 : False,
         "locker_fee"                : False,
         "donation_amount"           : 0,
         "payment_freq"              : 0,
@@ -192,11 +203,8 @@ def update_member_stripe_account(user=None):
     member["discord_id"] = user["discordId"]
     member["current_payment_method"] = user["currentPaymentMethod"]
     member["page_is_dirty"] = user["pageIsDirty"]
-    member["membership_fees"] = user["membershipRadio"]
+    member["membership_fees"] = user.get("membershipRadio")
 
-    if member["membership_fees"] == "p":
-        member["is_paused"] = True
-    
     if member["membership_fees"] == "m+l":
         member["locker_fee"] = True
 
@@ -218,13 +226,31 @@ def update_member_stripe_account(user=None):
     except Exception as e:
         log.info(e)
 
-    if user["deleteCurrentPaymentMethod"] == "1":
+    has_payment_method = bool(member["current_payment_method"])
+
+    if user["deleteCurrentPaymentMethod"] == "1" and not user.get("stripeToken"):
+
+        # Canceled members may remove their card without replacing it
+        if member["membership_fees"] != "c":
+            log.info("Member " + member["full_name"] + " Stripe ID: " + member["stripe_id"] + " tried to remove their card without canceling")
+            return False
+
+        try:
+            if member["current_payment_method"]:
+                stripe.PaymentMethod.detach(member["current_payment_method"])
+            has_payment_method = False
+            log.info("Removed payment method for member account  " + member["full_name"] + " Stripe ID: " + member["stripe_id"] )
+        except Exception as e:
+            log.info(e)
+            return False
+
+    elif user["deleteCurrentPaymentMethod"] == "1":
 
         # Member adds a new card:
         #   1) create a new PaymentMethod
         #   2) attach it to the Stripe Customer
         #   3) set new PaymentMethod as Customer default
-        #   4) detach the old PaymentMethod
+        #   4) detach the old PaymentMethod, if there was one
 
         try:
             real_card = {"token" : user["stripeToken"]}
@@ -235,24 +261,47 @@ def update_member_stripe_account(user=None):
                 member["stripe_id"],
                 invoice_settings = {"default_payment_method" : x}
             )
+            has_payment_method = True
 
-            stripe.PaymentMethod.detach(member["current_payment_method"])
+            if member["current_payment_method"]:
+                stripe.PaymentMethod.detach(member["current_payment_method"])
 
         except Exception as e:
             log.info(e)
+            return False
 
     # Update Subscriptions if necessary
     if member["page_is_dirty"] == "1":
 
         try:
-            cancel_current_subscription_plan(member["stripe_id"])
+            # Canceled members keep their Stripe customer, just no subscription
+            if member["membership_fees"] == "c":
+                cancel_current_subscription_plan(member["stripe_id"])
+                log.info("Canceled subscription for member account  " + member["full_name"] + " Stripe ID: " + member["stripe_id"])
+                return True
+
+            if member["membership_fees"] not in ("m", "m+l"):
+                log.info("Member account " + member["stripe_id"] + " sent an invalid membership plan: " + str(member["membership_fees"]))
+                return False
+
+            # Paid plans need a card; check before touching the current
+            # subscription so a failed change doesn't leave the member without one
+            if not has_payment_method:
+                log.info("Member  " + member["full_name"] + " Stripe ID: " + member["stripe_id"] + " has no payment method, not creating a subscription")
+                return False
+
+            # Free memberships are granted by the board, never selected from the form
+            if str(member["payment_freq"]) not in ("1", "3", "6", "12"):
+                log.info("Member account  " + member["full_name"] + " Stripe ID: " + member["stripe_id"] + " sent an invalid payment frequency: " + str(member["payment_freq"]))
+                return False
 
             sp = build_subscription_plan(
                 locker_fee=member["locker_fee"],
                 donation_amount=member["donation_amount"],
-                payment_freq=member["payment_freq"],
-                is_paused=member["is_paused"]
+                payment_freq=member["payment_freq"]
             )
+
+            cancel_current_subscription_plan(member["stripe_id"])
 
             stripe.Subscription.create(
                 customer = member["stripe_id"],
@@ -263,7 +312,10 @@ def update_member_stripe_account(user=None):
             log.info("Updating Stripe information for member account " + member["stripe_id"])
         except Exception as e:
             log.info(e)
-    
+            return False
+
+    return True
+
 def delete_membership(id):
     try:
         log.info("Deleting member account " + id)
@@ -273,13 +325,9 @@ def delete_membership(id):
     except:
         return False
     
-def build_subscription_plan(locker_fee=False,donation_amount=0,payment_freq=1,is_paused=False):
+def build_subscription_plan(locker_fee=False,donation_amount=0,payment_freq=1):
 
     pricing_map = load_pricing_map(config.PRICING_MAP)
-
-    if (is_paused):
-        mf = {"price": pricing_map["membership_fees"]["paused"]}
-        return [mf,]
 
     s_list = []
     fd = freq_decode(payment_freq)
@@ -308,10 +356,20 @@ def get_current_subscription_plan(c=None):
         "locker_fee"        : False,
         "donation_amount"   : 0,
         "payment_freq"      : 1,
-        "is_paused"         : False
+        "has_subscription"  : False,
+        "subscription_status" : None
     }
-    try: 
+    try:
+        # Subscription.list omits canceled subscriptions by default
         stripe_subscriptions=stripe.Subscription.list(customer=c['id'], limit=100)
+
+        if len(stripe_subscriptions.data) == 0:
+            log.info("The member " + c['id'] + " does not have an active subscription")
+            return subscriptions
+
+        subscriptions["has_subscription"] = True
+        subscriptions["subscription_status"] = stripe_subscriptions.data[0]["status"]
+
         p = stripe_subscriptions.data[0]["items"]["data"]
         i = stripe_subscriptions.data[0]["items"]["data"][0]["price"]["recurring"]["interval"]
         i_c = stripe_subscriptions.data[0]["items"]["data"][0]["price"]["recurring"]["interval_count"]
@@ -329,9 +387,6 @@ def get_current_subscription_plan(c=None):
             if "membership_fee" in x["price"]["metadata"]["type"]:
                 subscriptions["membership_fee"] = True
 
-                if i_price_map(pricing_map["membership_fees"])[id] == "paused":
-                    subscriptions["is_paused"] = True
-
                 if i_price_map(pricing_map["membership_fees"])[id] == "free":
                     subscriptions["membership_type"] = "free"
             
@@ -341,10 +396,10 @@ def get_current_subscription_plan(c=None):
             if "donation" in x["price"]["metadata"]["type"]:
                 subscriptions["donation_amount"] = reverse_map_donation_level(pricing_map["donation_levels"][d_freq],id)
             
-    except IndexError:
-        # The member does not have an active subscription
-        log.info("The member does not have an active subscription")
-        pass
+    except (IndexError, KeyError, TypeError, stripe.error.StripeError) as e:
+        # Prices missing from the pricing map, or without a metadata "type",
+        # shouldn't take down the update page
+        log.info("Unable to decode subscription for member " + c['id'] + ": " + repr(e))
 
     return subscriptions
 

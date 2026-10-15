@@ -70,11 +70,14 @@
       defaultMembershipFee: {{ mf }},
       membershipFee: 0,
       hasMembership: {{ member.membership_fee | lower }},
+      hasSubscription: {{ member.has_subscription | lower }},
+      hasPaymentMethod: {{ member.has_payment_method | lower }},
+      cardEntered: false,
       membershipType: "{{ member.membership_type }}",
       defaultLockerFee: {{ lf }},
       lockerFee: 0,
       hasLocker: {{ member.locker_fee | lower }},
-      membershipIsPaused: {{ member.is_paused | lower }},
+      membershipIsCanceled: false,
       donationAmount: {{ member.donation_amount }},
       paymentFrequency: {{ member.payment_freq }},
       charterMemberCoupon: {{ member.charter_member | lower }},
@@ -116,8 +119,8 @@
       $("#membershipFeeSubTotal").html("$" + user.membershipFeeSubtotal());
       $("#grandTotal").html("$" + user.grandTotal());
 
-      if (user.membershipIsPaused == true) {
-        $("#membershipFeeFreq").html("Membership Paused");
+      if (user.membershipIsCanceled == true) {
+        $("#membershipFeeFreq").html("Membership Canceled");
       }
 
       if (user.lockerFee != 0) {
@@ -227,25 +230,25 @@
       $("#pageIsDirty").val(1);
       var fee = $("input[name='membershipRadio']:checked").val();
     
+      user.membershipIsCanceled = false;
+
       if (fee == "m") {
-      
+
         user.membershipFee = user.defaultMembershipFee;
         user.lockerFee = 0;
-        user.membershipIsPaused = false;
-      
+
       } else if (fee == "m+l") {
-      
+
         user.membershipFee = user.defaultMembershipFee;
         user.lockerFee = user.defaultLockerFee;
-        user.membershipIsPaused = false;
-      
-      } else if (fee == "p") {
 
-        user.membershipIsPaused = true;
+      } else if (fee == "c") {
+
+        user.membershipIsCanceled = true;
         user.membershipFee = 0;
         user.lockerFee = 0;
         user.donationAmount = 0;
-        
+
         $("#donation0").prop("checked", true);
         $("input[name='donationRadio']").prop("disabled",true);
 
@@ -253,7 +256,7 @@
         $("input[name='payFreqRadio']").prop("disabled",true);
       };
 
-      if (fee != "p") {
+      if (fee != "c") {
         $("#donation0").prop("checked", true);
         $("input[name='donationRadio']").prop("disabled",false);
 
@@ -276,6 +279,10 @@
       update_summary();
     });
     
+    cardNum.on('change', function(event) {
+      user.cardEntered = !event.empty;
+    });
+
     cardNum.on('blur', function(event) {
       setSubmitButtonState();
     });
@@ -301,6 +308,33 @@
 
     $("#btnSubmit").click(function(e) {
 
+      if (!user.hasPaymentMethod && !user.cardEntered) {
+        const fee = $("input[name='membershipRadio']:checked").val();
+        if ($("#pageIsDirty").val() == "1" && (fee == "m" || fee == "m+l")) {
+          e.preventDefault();
+          $("#form_invalid").html("Please enter a card in <b>Payment Information</b> before choosing a membership plan.");
+          $("#form_invalid").show();
+          return;
+        }
+        $("#deleteCurrentPaymentMethod").val("0");
+      }
+
+      // Canceled members can remove their card without adding a new one
+      if (user.hasPaymentMethod && !user.cardEntered && $("#deleteCurrentPaymentMethod").val() == "1") {
+        if ($("input[name='membershipRadio']:checked").val() != "c") {
+          e.preventDefault();
+          $("#form_invalid").html("Please enter a new card in <b>Payment Information</b>, or choose <b>Cancel Membership</b> to remove your card.");
+          $("#form_invalid").show();
+          return;
+        }
+        e.preventDefault();
+        $("#stripeToken").val("");
+        $("#btnSubmit").html("Updating...");
+        $("#btnSubmit").prop('disabled', true);
+        $('#form1').trigger('submit');
+        return;
+      }
+
       if ($("#deleteCurrentPaymentMethod").val() == "1"){
         e.preventDefault();
         console.log("tokenizing new payment method...");
@@ -310,6 +344,8 @@
           if (result.error && result.error.message){
             console.log(result.error.message);
             setSubmitButtonState();
+            $("#form_invalid").html(result.error.message);
+            $("#form_invalid").show();
           } else {
             $("#btnSubmit").html("Updating...");
             $("#btnSubmit").prop('disabled', true);
@@ -344,10 +380,11 @@
       $("#discordId").val(user.discordId);
     }
  
-    if (user.membershipIsPaused) {
+    if (!user.hasSubscription) {
+      user.membershipIsCanceled = true;
       user.membershipFee = 0;
       user.lockerFee = 0;
-      $("#membershipFeePaused").prop("checked", true);
+      $("#membershipCanceled").prop("checked", true);
       $("input[name='donationRadio']").prop("disabled",true);
       $("input[name='payFreqRadio']").prop("disabled",true);
     } else {
@@ -371,10 +408,17 @@
       $("#btnCardDelete").prop('disabled',true);
     }
 
+    if (!user.hasPaymentMethod) {
+      $("#deleteCurrentPaymentMethod").val("1");
+      $("#paymentMethodHeader").html("Payment Information - Add New Payment Method");
+      $("#currentPaymentMethodTable").hide();
+      $("#newPaymentMethodTable").show();
+    }
+
     $('#form1').preventDoubleSubmission();
     update_summary();
 
-    {% with messages = get_flashed_messages() %}
+    {% with messages = get_flashed_messages(category_filter=["success"]) %}
       {% if messages %}
 
       $("#update_notice").show();
@@ -397,6 +441,14 @@
 <div class="alert alert-success" role="alert" name="update_notice" id="update_notice">
   <strong>Your membership information has been updated...</strong>
 </div>
+
+{% with errors = get_flashed_messages(category_filter=["error"]) %}
+  {% for error in errors %}
+  <div class="alert alert-danger" role="alert">
+    <strong>{{ error }}</strong>
+  </div>
+  {% endfor %}
+{% endwith %}
 
 <nav class="navbar navbar-expand-sm" style="background-color: #eee;">
 
@@ -460,6 +512,16 @@
       or reach out in the <a href="https://synshop.org/discord">SYN Shop Discord</a>.
     </p>
     </div>
+
+    {% if not member.has_subscription %}
+    <div class="alert alert-info shadow rounded" role="alert" style="width:85%;">
+      You don't currently have an active membership. Choose a plan below to start one.
+    </div>
+    {% elif member.subscription_status in ['past_due', 'unpaid', 'incomplete'] %}
+    <div class="alert alert-danger shadow rounded" role="alert" style="width:85%;">
+      There is a problem with your last membership payment. Please update your payment information below.
+    </div>
+    {% endif %}
 
     {% if member.membership_type == 'free' %}
     <div class="alert alert-primary d-flex align-items-center shadow rounded" role="alert" style="width:85%;">
@@ -556,8 +618,8 @@
             <label class="form-check-label stretched-link" for="membershipFeeAndLocker">${{ mf }} / Month Membership + {{ lf }} / Month Locker Fee </label>
           </li>
           <li class="list-group-item">
-            <input class="form-check-input me-1" type="radio" name="membershipRadio" value="p" id="membershipFeePaused">
-            <label class="form-check-label stretched-link" for="membershipFeePaused">Pause Membership</label>
+            <input class="form-check-input me-1" type="radio" name="membershipRadio" value="c" id="membershipCanceled">
+            <label class="form-check-label stretched-link" for="membershipCanceled">Cancel Membership</label>
           </li>
         </ul>
 
@@ -800,12 +862,12 @@
           <div class="modal-body">
           <p>
             If you just want to take a break from SYN Shop, we suggest you 
-            <strong>Pause</strong> your membership instead of permanently 
+            <strong>Cancel</strong> your membership instead of permanently 
             deleting your account.
           </p>  
           <p>
-            To Pause your membership, cancel out of this and select 'Pause Membership' 
-            in the Subscription Info section above.
+            To Cancel your membership, cancel out of this and select 'Cancel Membership' 
+            in the Membership Plan section above.
           </p>
           <p>
             However, if you are sure you want to do this, clicking the <strong>Yes, 
