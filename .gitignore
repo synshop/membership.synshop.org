@@ -11,3 +11,5 @@ migration/*.txt*
 .vscode*
 certs/
 *.pem
+HANDOFF-electronic-waivers.md
+*.log
