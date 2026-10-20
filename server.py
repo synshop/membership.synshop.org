@@ -7,8 +7,10 @@ from authlib.integrations.base_client.errors import OAuthError
 
 from flask import Flask, redirect, render_template, request, session, url_for, flash
 from flask_wtf.csrf import CSRFProtect
+from werkzeug.middleware.proxy_fix import ProxyFix
 from crypto import SettingsUtil, CryptoUtil
-from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account, delete_membership, get_stripe_customer, get_default_payment_method
+from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account, delete_membership, get_stripe_customer, get_default_payment_method, record_waiver
+from synshop.waiver import WAIVER_VERSION, WAIVER_SHA256, WAIVER_TITLE, WAIVER_PARAGRAPHS, validate_waiver_form, build_waiver_metadata, has_signed_current_waiver
 
 app = Flask(__name__) 
 
@@ -35,6 +37,12 @@ app.config['SESSION_COOKIE_SECURE'] = getattr(config, 'SESSION_COOKIE_SECURE', T
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['WTF_CSRF_TIME_LIMIT'] = None
+
+# Behind a reverse proxy (Caddy in production), trust X-Forwarded-For from that
+# many proxies so request.remote_addr is the member's IP, not the proxy's
+TRUSTED_PROXY_COUNT = getattr(config, 'TRUSTED_PROXY_COUNT', 0)
+if TRUSTED_PROXY_COUNT > 0:
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=TRUSTED_PROXY_COUNT)
 
 # Load Encrypted Configuration Variables
 try:
@@ -79,6 +87,17 @@ oauth.register(
     },
     server_metadata_url=f'https://{app.config["AUTH0_DOMAIN"]}/.well-known/openid-configuration',
 )
+
+def render_waiver_gate(email=None, customer=None):
+    return render_template(
+        "sign_waiver.html",
+        email=email,
+        resign='waiver_version' in customer['metadata'],
+        root_server_url=app.config['ROOT_SERVER_URL'],
+        waiver_version=WAIVER_VERSION,
+        waiver_sha256=WAIVER_SHA256,
+        waiver_title=WAIVER_TITLE,
+        waiver_paragraphs=WAIVER_PARAGRAPHS)
 
 @app.route("/")
 def index():
@@ -138,12 +157,38 @@ def new_user():
         mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
         lf=app.config["NEW_USER_LOCKER_FEE"]
         pk=app.config["STRIPE_PK"]
-        return render_template("new_user.html", email=email, mf=mf, lf=lf, root_server_url=app.config['ROOT_SERVER_URL'], stripe_pk=pk)
+        return render_template(
+            "new_user.html",
+            email=email,
+            mf=mf, lf=lf,
+            root_server_url=app.config['ROOT_SERVER_URL'],
+            stripe_pk=pk,
+            waiver_version=WAIVER_VERSION,
+            waiver_sha256=WAIVER_SHA256,
+            waiver_title=WAIVER_TITLE,
+            waiver_paragraphs=WAIVER_PARAGRAPHS)
     else:
         # Use the verified Auth0 email, not the one posted by the browser
         form = request.form.to_dict()
         form['email'] = email
-        create_new_member(form)
+
+        # Check the waiver before creating anything in Stripe, so nobody is
+        # billed without a signed waiver
+        waiver_errors = validate_waiver_form(form)
+        if waiver_errors:
+            app.logger.info(f'{email} POSTed to /new with an invalid waiver: {waiver_errors}')
+            for e in waiver_errors:
+                flash(e, "waiver")
+            return redirect(url_for("new_user"))
+
+        waiver_metadata = build_waiver_metadata(
+            form,
+            auth0_sub=session["user"]["userinfo"].get("sub"),
+            ip=request.remote_addr,
+            user_agent=request.headers.get("User-Agent"))
+
+        create_new_member(form, waiver_metadata)
+        app.logger.info(f'{email} signed waiver {WAIVER_VERSION} at {waiver_metadata["waiver_signed_at"]} from {waiver_metadata["waiver_signed_ip"]}')
         app.logger.info(f'{email} has been created in Stripe for /new...')
         return redirect(url_for("welcome_user"))
 
@@ -157,7 +202,12 @@ def update_user():
     email = session["user"]["userinfo"]["email"]
     
     if request.method == 'GET':
-         if has_stripe_account(email) == 1:
+         customer = get_stripe_customer(email)
+         if customer is not None:
+            # Members must sign the current waiver before anything else on /update
+            if not has_signed_current_waiver(customer['metadata']):
+                app.logger.info(f'{email} has not signed waiver {WAIVER_VERSION}, showing the waiver gate')
+                return render_waiver_gate(email, customer)
             app.logger.info(f'Fetching user info for {email} from Stripe for /update...')
          else:
              app.logger.info(f'{email} has an Auth0 account but was NOT found in Stripe, redirecting to /new')
@@ -172,6 +222,10 @@ def update_user():
         if customer is None:
             app.logger.info(f'{email} POSTed to /update but was NOT found in Stripe, redirecting to /new')
             return redirect(url_for('new_user'))
+
+        if not has_signed_current_waiver(customer['metadata']):
+            app.logger.info(f'{email} POSTed to /update without signing waiver {WAIVER_VERSION}, redirecting to the waiver gate')
+            return redirect(url_for('update_user'))
 
         form = request.form.to_dict()
         form['email'] = email
@@ -198,6 +252,40 @@ def update_user():
         member=member,
         stripe_pk=pk,
         root_server_url=app.config['ROOT_SERVER_URL'])
+
+# Existing members sign the waiver here, from the gate shown by /update
+@app.route("/waiver", methods=['POST'])
+@login_required
+def sign_waiver():
+    email = session["user"]["userinfo"]["email"]
+
+    # Never trust the Stripe IDs posted by the browser
+    customer = get_stripe_customer(email)
+    if customer is None:
+        app.logger.info(f'{email} POSTed to /waiver but was NOT found in Stripe, redirecting to /new')
+        return redirect(url_for('new_user'))
+
+    form = request.form.to_dict()
+    waiver_errors = validate_waiver_form(form)
+    if waiver_errors:
+        app.logger.info(f'{email} POSTed to /waiver with an invalid waiver: {waiver_errors}')
+        for e in waiver_errors:
+            flash(e, "waiver")
+        return redirect(url_for('update_user'))
+
+    waiver_metadata = build_waiver_metadata(
+        form,
+        auth0_sub=session["user"]["userinfo"].get("sub"),
+        ip=request.remote_addr,
+        user_agent=request.headers.get("User-Agent"))
+
+    if record_waiver(customer['id'], waiver_metadata):
+        app.logger.info(f'{email} signed waiver {WAIVER_VERSION} at {waiver_metadata["waiver_signed_at"]} from {waiver_metadata["waiver_signed_ip"]}')
+    else:
+        app.logger.info(f'Recording waiver {WAIVER_VERSION} for {email} FAILED')
+        flash("We couldn't save your signed waiver. Please try again, or contact support@synshop.org.", "waiver")
+
+    return redirect(url_for('update_user'))
 
 @app.route("/welcome", methods=['GET'])
 @login_required
