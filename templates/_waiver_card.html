@@ -1,0 +1,75 @@
+{# Liability waiver card shared by /new and the /update waiver gate.
+   Expects waiver_title, waiver_paragraphs and root_server_url; the page
+   includes static/js/waiver.js and wires up the inputs below. #}
+<div class="card" style="width:85%;margin-bottom:15px;">
+  <h6 class="card-header">Liability Waiver</h6>
+  <div class="card-body">
+
+    <p>
+      All members must sign the SYN Shop liability waiver. Please read it carefully.
+    </p>
+
+    <div class="border rounded p-3 mb-3 bg-body-tertiary" style="max-height:300px;overflow-y:auto;" tabindex="0" aria-label="{{ waiver_title }}">
+      <h5 class="text-center">{{ waiver_title }}</h5>
+      {% for p in waiver_paragraphs %}
+      <p>{{ p }}</p>
+      {% endfor %}
+    </div>
+
+    <div class="border rounded p-3 mb-3">
+      <p class="mb-2"><b>Consent to sign electronically</b></p>
+      <ul class="small">
+        <li>
+          You don't have to sign electronically. You can instead
+          <a href="{{ root_server_url }}/assets/pdf/SYN_Shop_Liability_Waiver_Members.pdf" target="_blank">print the paper waiver</a>,
+          sign it, and bring it to the shop.
+        </li>
+        <li>
+          You can withdraw your consent to sign electronically, or ask for a paper copy of
+          the waiver at no charge, by emailing <a href="mailto:support@synshop.org">support@synshop.org</a>.
+        </li>
+        <li>
+          To sign electronically you need a current web browser. If you can read the waiver
+          above, your browser meets this requirement.
+        </li>
+      </ul>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="1" name="waiverConsent" id="waiverConsent">
+        <label class="form-check-label" for="waiverConsent">
+          I have read the above and agree to sign this waiver electronically
+        </label>
+      </div>
+    </div>
+
+    <div class="row g-3" style="margin-bottom:15px;">
+      <div class="col-md-4">
+        <label for="waiverDob" class="form-label"><b>Date of Birth</b></label>
+        <input type="date" class="form-control" id="waiverDob" name="waiverDob" required>
+        <div class="invalid-feedback" id="waiver-dob-invalid">
+          Please enter a valid date of birth
+        </div>
+        <div class="invalid-feedback" id="waiver-dob-minor">
+          Members under 18 can't sign online. Please
+          <a href="{{ root_server_url }}/assets/pdf/SYN_Shop_Liability_Waiver_Members.pdf" target="_blank">print the paper waiver</a>,
+          have a parent or guardian sign it, and bring it to the shop.
+        </div>
+      </div>
+
+      <div class="col-md-8">
+        <label for="waiverSignature" class="form-label"><b>Waiver Signature (type your full legal name)</b></label>
+        <input type="text" class="form-control" id="waiverSignature" name="waiverSignature" placeholder="Full legal name" required autocomplete="name">
+        <div class="invalid-feedback" id="waiver-signature-invalid">
+          Please type your full legal name to sign
+        </div>
+      </div>
+    </div>
+
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" value="1" name="waiverAgree" id="waiverAgree">
+      <label class="form-check-label" for="waiverAgree">
+        <b>I have read and agree to the SYN Shop Member Liability Waiver, and I intend my typed name above to be my signature</b>
+      </label>
+    </div>
+
+  </div>
+</div>
