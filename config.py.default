@@ -33,3 +33,8 @@ Test Cards
 6011111111111117 (discover)
 378282246310005  (amex)
 """
+
+# Number of reverse proxies in front of the app (Caddy in production = 1).
+# Used to record the signer's real IP address on electronic waivers.
+# Leave at 0 when running `python server.py` directly.
+TRUSTED_PROXY_COUNT = 0

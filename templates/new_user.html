@@ -13,11 +13,16 @@
   <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/card-js.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/waiver.js') }}"></script>
   <script src="https://js.stripe.com/v3/"></script>
 
   <script language="javascript">
   
   $( document ).ready(function() {
+
+    // The submit controls stay hidden and disabled unless JavaScript is running (issue #87)
+    $("#btnSubmit").prop('disabled', false);
+    $("#submitControls").removeClass("d-none");
 
     var stripe = Stripe('{{stripe_pk}}');
     const elements = stripe.elements();
@@ -72,6 +77,10 @@
       ccNumberIsValid: false,
       ccExpDateIsValid: false,
       ccCVCIsValid: false,
+      waiverConsent: false,
+      waiverAgree: false,
+      waiverSignatureIsValid: false,
+      waiverDobIsValid: false,
       membershipFeeSubtotal: function () {
         return (this.membershipFee * this.paymentFrequency)
       },
@@ -143,13 +152,33 @@
       }
   
       if (user.fullNameIsValid == false || 
+          user.waiverConsent == false ||
+          user.waiverDobIsValid == false ||
+          user.waiverSignatureIsValid == false ||
+          user.waiverAgree == false ||
           user.ccNumberIsValid == false || 
           user.ccExpDateIsValid == false || 
           user.ccCVCIsValid == false ) {
 
         msgArray = [];
         if (user.fullNameIsValid == false) {
-          msgArray.push("Full Name");
+          msgArray.push("<a href=\"#fullName\" class=\"text-danger\">Full Name</a>");
+        }
+
+        if (user.waiverConsent == false) {
+          msgArray.push("Electronic Signature Consent");
+        }
+
+        if (user.waiverDobIsValid == false) {
+          msgArray.push("Date of Birth");
+        }
+
+        if (user.waiverSignatureIsValid == false) {
+          msgArray.push("Waiver Signature");
+        }
+
+        if (user.waiverAgree == false) {
+          msgArray.push("Waiver Agreement");
         }
 
         if (user.ccNumberIsValid == false) {
@@ -183,6 +212,26 @@
         $("#fullname-invalid").hide();
         user.fullNameIsValid = true;
       }
+      setSubmitButtonState();
+    });
+
+    $("#waiverConsent").on("change", function() {
+      user.waiverConsent = $("#waiverConsent").is(":checked");
+      setSubmitButtonState();
+    });
+
+    $("#waiverAgree").on("change", function() {
+      user.waiverAgree = $("#waiverAgree").is(":checked");
+      setSubmitButtonState();
+    });
+
+    $("#waiverSignature").on("blur", function() {
+      user.waiverSignatureIsValid = checkWaiverSignature();
+      setSubmitButtonState();
+    });
+
+    $("#waiverDob").on("change blur", function() {
+      user.waiverDobIsValid = checkWaiverDob();
       setSubmitButtonState();
     });
 
@@ -230,6 +279,12 @@
 
       e.preventDefault();
 
+      // The button starts out enabled, so re-check everything before charging
+      setSubmitButtonState();
+      if ($("#btnSubmit").prop('disabled')) {
+        return;
+      }
+
       var cardData = {'name': user.fullName,};
       stripe.createToken(cardNum, cardData).then(function(result) {
         if (result.error && result.error.message){
@@ -251,7 +306,7 @@
     update_summary();
     $('#form1').preventDoubleSubmission();
 
-    {% with messages = get_flashed_messages() %}
+    {% with messages = get_flashed_messages(category_filter=["message"]) %}
       {% if messages %}
 
       $("#update_notice").show();
@@ -313,10 +368,25 @@
 
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 
+  {% with waiver_errors = get_flashed_messages(category_filter=["waiver"]) %}
+    {% if waiver_errors %}
+    <div class="alert alert-danger shadow rounded" role="alert" style="width:85%;">
+      <strong>Your liability waiver wasn't signed, so your membership has not been created:</strong>
+      <ul class="mb-0">
+        {% for e in waiver_errors %}
+        <li>{{ e }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  {% endwith %}
+
   <form method="POST" name="form1" id="form1">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" name="email" value="{{ email }}"/>
     <input type="hidden" name="stripeToken" id="stripeToken" value="" />
+    <input type="hidden" name="waiverVersion" value="{{ waiver_version }}" />
+    <input type="hidden" name="waiverSha256" value="{{ waiver_sha256 }}" />
 
     <div class="alert alert-warning shadow rounded" role="alert" style="width:85%;">
     <h4 class="alert-heading">Welcome to SYN Shop!</h4>
@@ -524,7 +594,7 @@
     </div>
 
     <!-- Membership Summary -->
-    <div class="card" style="width:85%;margin-bottom:15px;">
+    <div class="card" style="width:85%;margin-bottom:25px;">
       <h6 class="card-header">Membership Summary</h6>
       <div class="card-body table-responsive-md">
 
@@ -568,15 +638,23 @@
       </div>
     </div>
 
+    <!-- Liability Waiver -->
+    {% include "_waiver_card.html" %}
+
     <!-- Submit and Cancel  Controls -->
     <div class="card" style="width:85%;">
       <div class="card-body">
         <div class="invalid-feedback" id="form_invalid" style="padding-bottom: 10px;">
           Please fix the errors above before continuing
         </div>
-        <div class="row g-3">
+        <noscript>
+          <div class="alert alert-danger" role="alert">
+            <strong>JavaScript is required.</strong> Please enable JavaScript in your browser and reload this page to continue.
+          </div>
+        </noscript>
+        <div class="row g-3 d-none" id="submitControls">
           <div class="col-auto">
-            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit">Submit</button>
+            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit" disabled>Sign Waiver and Create Membership</button>
           </div>
           <div class="col-auto">
             <button type="button" class="btn btn-lg btn-secondary btn-block" name="btnCancel" id="btnCancel">Cancel</button>

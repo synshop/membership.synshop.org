@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SYN Shop Membership Management</title>
+
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static',filename='images/favicon.ico') }}">
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+
+  <noscript>this site requires javascript for both membership.synshop.net and synshop.auth0.com</noscript>
+
+  <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/waiver.js') }}"></script>
+
+  <script language="javascript">
+
+  $( document ).ready(function() {
+
+    // The submit controls stay hidden and disabled unless JavaScript is running (issue #87)
+    $("#btnSubmit").prop('disabled', false);
+    $("#submitControls").removeClass("d-none");
+
+    const user = {
+      waiverConsent: false,
+      waiverAgree: false,
+      waiverSignatureIsValid: false,
+      waiverDobIsValid: false
+    };
+
+    function setSubmitButtonState() {
+
+      if (user.waiverConsent == false ||
+          user.waiverDobIsValid == false ||
+          user.waiverSignatureIsValid == false ||
+          user.waiverAgree == false ) {
+
+        msgArray = [];
+        if (user.waiverConsent == false) {
+          msgArray.push("Electronic Signature Consent");
+        }
+
+        if (user.waiverDobIsValid == false) {
+          msgArray.push("Date of Birth");
+        }
+
+        if (user.waiverSignatureIsValid == false) {
+          msgArray.push("Waiver Signature");
+        }
+
+        if (user.waiverAgree == false) {
+          msgArray.push("Waiver Agreement");
+        }
+
+        msg = "The following fields above are either missing or invalid, please fix: <b>" + msgArray.join(", ") + "</b>";
+        $("#form_invalid").html(msg);
+        $("#form_invalid").show();
+        $("#btnSubmit").prop('disabled', true);
+      } else {
+        $("#form_invalid").hide();
+        $("#btnSubmit").prop('disabled', false);
+      }
+    };
+
+    $("#waiverConsent").on("change", function() {
+      user.waiverConsent = $("#waiverConsent").is(":checked");
+      setSubmitButtonState();
+    });
+
+    $("#waiverAgree").on("change", function() {
+      user.waiverAgree = $("#waiverAgree").is(":checked");
+      setSubmitButtonState();
+    });
+
+    $("#waiverSignature").on("blur", function() {
+      user.waiverSignatureIsValid = checkWaiverSignature();
+      setSubmitButtonState();
+    });
+
+    $("#waiverDob").on("change blur", function() {
+      user.waiverDobIsValid = checkWaiverDob();
+      setSubmitButtonState();
+    });
+
+    $("#btnSubmit").click(function(e) {
+      // The button starts out enabled, so re-check everything before submitting
+      setSubmitButtonState();
+      if ($("#btnSubmit").prop('disabled')) {
+        e.preventDefault();
+        return;
+      }
+      $("#btnSubmit").html("Signing...");
+    });
+
+    $('#form1').on('submit', function() {
+      $("#btnSubmit").prop('disabled', true);
+    });
+
+  }); // End of document.ready
+
+  </script>
+
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-sm" style="background-color: #eee;">
+
+    <!-- Toggler Button -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar" aria-controls="collapsibleNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Navbar links -->
+    <div class="collapse navbar-collapse" id="collapsibleNavbar" style="margin-left:10px;">
+      <a class="navbar-brand nav-link" href="#">
+        <img src="{{ url_for('static', filename='images/logo_textless.png') }}" class="d-inline-block align-text-top" height="48px" alt="SYN Shop Logo">
+      </a>
+      <ul class="navbar-nav" style="margin-top:0px;">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ root_server_url }}/hours/">Hours</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ root_server_url }}/events/">Events</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ root_server_url }}/equipment/">Equipment</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://rtfm.synshop.org">RTFM</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ root_server_url }}/about/">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ root_server_url }}/donate/">Donate</a>
+        </li>
+        <li class="nav-item">
+          <b><a class="nav-link" href="/logout">Logout</a></b>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+<div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
+
+  {% with waiver_errors = get_flashed_messages(category_filter=["waiver"]) %}
+    {% if waiver_errors %}
+    <div class="alert alert-danger shadow rounded" role="alert" style="width:85%;">
+      <strong>Your liability waiver wasn't signed:</strong>
+      <ul class="mb-0">
+        {% for e in waiver_errors %}
+        <li>{{ e }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('sign_waiver') }}" name="form1" id="form1">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="waiverVersion" value="{{ waiver_version }}" />
+    <input type="hidden" name="waiverSha256" value="{{ waiver_sha256 }}" />
+
+    <div class="alert alert-warning shadow rounded" role="alert" style="width:85%;">
+    <h4 class="alert-heading">Please Sign the Liability Waiver</h4>
+    <p>
+      {% if resign %}
+      The SYN Shop liability waiver has been updated. Please read and sign the new
+      version before managing your membership.
+      {% else %}
+      SYN Shop now collects liability waivers electronically. Please read and sign
+      the waiver below before managing your membership, even if you've signed a
+      paper waiver before.
+      {% endif %}
+    </p>
+    <hr>
+    <p class="mb-0">
+      Signed in as <b>{{ email }}</b>.
+      If you have any questions or need help with anything,
+      please email <a href="mailto:support@synshop.org">support@synshop.org</a>
+      or reach out in the <a href="https://synshop.org/discord">SYN Shop Discord</a>.
+    </p>
+    </div>
+
+    <!-- Liability Waiver -->
+    {% include "_waiver_card.html" %}
+
+    <!-- Submit Controls -->
+    <div class="card" style="width:85%;">
+      <div class="card-body">
+        <div class="invalid-feedback" id="form_invalid" style="padding-bottom: 10px;">
+          Please fix the errors above before continuing
+        </div>
+        <noscript>
+          <div class="alert alert-danger" role="alert">
+            <strong>JavaScript is required.</strong> Please enable JavaScript in your browser and reload this page to continue.
+          </div>
+        </noscript>
+        <div class="row g-3 d-none" id="submitControls">
+          <div class="col-auto">
+            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit" disabled>Sign Waiver</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </form>
+</div>
+
+</body>
+</html>
