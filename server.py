@@ -5,10 +5,10 @@ import logging
 from authlib.integrations.flask_client import OAuth
 from authlib.integrations.base_client.errors import OAuthError
 
-from flask import Flask, redirect, render_template, request, session, url_for, flash
+from flask import Flask, redirect, render_template, request, session, url_for, flash, jsonify
 from flask_wtf.csrf import CSRFProtect
 from crypto import SettingsUtil, CryptoUtil
-from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account, delete_membership, get_stripe_customer, get_default_payment_method
+from synshop import has_stripe_account, create_new_member, get_member_stripe_account, update_member_stripe_account, delete_membership, get_stripe_customer, get_default_payment_method, create_setup_intent, PaymentActionRequired
 
 app = Flask(__name__) 
 
@@ -143,9 +143,32 @@ def new_user():
         # Use the verified Auth0 email, not the one posted by the browser
         form = request.form.to_dict()
         form['email'] = email
-        create_new_member(form)
+        try:
+            created = create_new_member(form)
+        except PaymentActionRequired as e:
+            app.logger.info(f'{email} has been created in Stripe for /new, first payment needs 3D Secure...')
+            return redirect(e.url)
+
+        if not created:
+            app.logger.info(f'Sign up for {email} did not complete')
+            flash("We couldn't set up your membership. Please check your payment information, or contact support@synshop.org.", "error")
+            return redirect(url_for("new_user"))
+
         app.logger.info(f'{email} has been created in Stripe for /new...')
         return redirect(url_for("welcome_user"))
+
+# Starts card setup for the browser; Stripe.js confirms it, running 3D Secure if the bank asks
+@app.route("/setup-intent", methods=['POST'])
+@login_required
+def setup_intent():
+    email = session["user"]["userinfo"]["email"]
+    customer = get_stripe_customer(email)
+
+    si = create_setup_intent(email, customer['id'] if customer else None)
+    if si is None:
+        return jsonify(error="Unable to start card setup"), 502
+
+    return jsonify(client_secret=si.client_secret)
 
 @app.route("/update", methods=['GET', 'POST'])
 @login_required
@@ -184,7 +207,13 @@ def update_user():
             return redirect(url_for('delete_user'))
 
         app.logger.info(f'Updating info for {email} in Stripe...')
-        if update_member_stripe_account(form):
+        try:
+            updated = update_member_stripe_account(form)
+        except PaymentActionRequired as e:
+            app.logger.info(f'First payment for {email} needs 3D Secure, sending them to the hosted invoice page')
+            return redirect(e.url)
+
+        if updated:
             flash("Your information has been updated successfully", "success")
         else:
             app.logger.info(f'Update for {email} did not complete')
