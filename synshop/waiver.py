@@ -36,11 +36,8 @@ def validate_waiver_form(form=None, today=None):
     if form.get("waiverVersion") != WAIVER_VERSION or form.get("waiverSha256") != WAIVER_SHA256:
         errors.append("The waiver has been updated since this page was loaded. Please review the current waiver and sign again.")
 
-    if form.get("waiverConsent") != "1":
-        errors.append("You must consent to signing electronically.")
-
     if form.get("waiverAgree") != "1":
-        errors.append("You must agree to the liability waiver.")
+        errors.append("You must agree to the liability waiver and consent to signing it electronically.")
 
     if not form.get("waiverSignature", "").strip():
         errors.append("You must type your full legal name as your signature.")

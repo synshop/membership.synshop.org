@@ -38,11 +38,11 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['WTF_CSRF_TIME_LIMIT'] = None
 
-# Behind a reverse proxy (Caddy in production), trust X-Forwarded-For from that
-# many proxies so request.remote_addr is the member's IP, not the proxy's
-TRUSTED_PROXY_COUNT = getattr(config, 'TRUSTED_PROXY_COUNT', 0)
-if TRUSTED_PROXY_COUNT > 0:
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=TRUSTED_PROXY_COUNT)
+# Behind a reverse proxy (Caddy in production), trust X-Forwarded-For from it
+# so request.remote_addr is the member's IP, not the proxy's
+IS_BEHIND_PROXY = getattr(config, 'IS_BEHIND_PROXY', False)
+if IS_BEHIND_PROXY:
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
 # Load Encrypted Configuration Variables
 try:

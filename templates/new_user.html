@@ -77,7 +77,6 @@
       ccNumberIsValid: false,
       ccExpDateIsValid: false,
       ccCVCIsValid: false,
-      waiverConsent: false,
       waiverAgree: false,
       waiverSignatureIsValid: false,
       waiverDobIsValid: false,
@@ -151,8 +150,7 @@
         $('#cc-cvc-invalid').hide();
       }
   
-      if (user.fullNameIsValid == false || 
-          user.waiverConsent == false ||
+      if (user.fullNameIsValid == false ||
           user.waiverDobIsValid == false ||
           user.waiverSignatureIsValid == false ||
           user.waiverAgree == false ||
@@ -163,10 +161,6 @@
         msgArray = [];
         if (user.fullNameIsValid == false) {
           msgArray.push("<a href=\"#fullName\" class=\"text-danger\">Full Name</a>");
-        }
-
-        if (user.waiverConsent == false) {
-          msgArray.push("Electronic Signature Consent");
         }
 
         if (user.waiverDobIsValid == false) {
@@ -212,11 +206,6 @@
         $("#fullname-invalid").hide();
         user.fullNameIsValid = true;
       }
-      setSubmitButtonState();
-    });
-
-    $("#waiverConsent").on("change", function() {
-      user.waiverConsent = $("#waiverConsent").is(":checked");
       setSubmitButtonState();
     });
 

@@ -23,7 +23,6 @@
     $("#submitControls").removeClass("d-none");
 
     const user = {
-      waiverConsent: false,
       waiverAgree: false,
       waiverSignatureIsValid: false,
       waiverDobIsValid: false
@@ -31,16 +30,11 @@
 
     function setSubmitButtonState() {
 
-      if (user.waiverConsent == false ||
-          user.waiverDobIsValid == false ||
+      if (user.waiverDobIsValid == false ||
           user.waiverSignatureIsValid == false ||
           user.waiverAgree == false ) {
 
         msgArray = [];
-        if (user.waiverConsent == false) {
-          msgArray.push("Electronic Signature Consent");
-        }
-
         if (user.waiverDobIsValid == false) {
           msgArray.push("Date of Birth");
         }
@@ -62,11 +56,6 @@
         $("#btnSubmit").prop('disabled', false);
       }
     };
-
-    $("#waiverConsent").on("change", function() {
-      user.waiverConsent = $("#waiverConsent").is(":checked");
-      setSubmitButtonState();
-    });
 
     $("#waiverAgree").on("change", function() {
       user.waiverAgree = $("#waiverAgree").is(":checked");

@@ -18,7 +18,7 @@
 
     <div class="border rounded p-3 mb-3">
       <p class="mb-2"><b>Consent to sign electronically</b></p>
-      <ul class="small">
+      <ul class="small mb-0">
         <li>
           You don't have to sign electronically. You can instead
           <a href="{{ root_server_url }}/assets/pdf/SYN_Shop_Liability_Waiver_Members.pdf" target="_blank">print the paper waiver</a>,
@@ -33,18 +33,29 @@
           above, your browser meets this requirement.
         </li>
       </ul>
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" value="1" name="waiverConsent" id="waiverConsent">
-        <label class="form-check-label" for="waiverConsent">
-          I have read the above and agree to sign this waiver electronically
-        </label>
-      </div>
     </div>
 
     <div class="row g-3" style="margin-bottom:15px;">
-      <div class="col-md-4">
-        <label for="waiverDob" class="form-label"><b>Date of Birth</b></label>
-        <input type="date" class="form-control" id="waiverDob" name="waiverDob" required>
+      <div class="col-md-5">
+        <label for="waiverDobMonth" class="form-label"><b>Date of Birth</b></label>
+        <div class="d-flex gap-2">
+          <select class="form-select" id="waiverDobMonth" aria-label="Birth month" autocomplete="bday-month">
+            <option value="" selected>Month</option>
+            {% for m in ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] %}
+            <option value="{{ loop.index }}">{{ m }}</option>
+            {% endfor %}
+          </select>
+          <select class="form-select" id="waiverDobDay" aria-label="Birth day" autocomplete="bday-day" style="max-width:6rem;">
+            <option value="" selected>Day</option>
+            {% for d in range(1, 32) %}
+            <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+          </select>
+          <select class="form-select" id="waiverDobYear" aria-label="Birth year" autocomplete="bday-year" style="max-width:7rem;">
+            <option value="" selected>Year</option>
+          </select>
+        </div>
+        <input type="hidden" id="waiverDob" name="waiverDob" value="">
         <div class="invalid-feedback" id="waiver-dob-invalid">
           Please enter a valid date of birth
         </div>
@@ -55,7 +66,7 @@
         </div>
       </div>
 
-      <div class="col-md-8">
+      <div class="col-md-7">
         <label for="waiverSignature" class="form-label"><b>Waiver Signature (type your full legal name)</b></label>
         <input type="text" class="form-control" id="waiverSignature" name="waiverSignature" placeholder="Full legal name" required autocomplete="name">
         <div class="invalid-feedback" id="waiver-signature-invalid">
@@ -67,7 +78,7 @@
     <div class="form-check">
       <input class="form-check-input" type="checkbox" value="1" name="waiverAgree" id="waiverAgree">
       <label class="form-check-label" for="waiverAgree">
-        <b>I have read and agree to the SYN Shop Member Liability Waiver, and I intend my typed name above to be my signature</b>
+        <b>I have read and agree to the SYN Shop Member Liability Waiver, I consent to signing it electronically, and I intend my typed name above to be my signature</b>
       </label>
     </div>
 

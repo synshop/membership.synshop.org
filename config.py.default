@@ -34,7 +34,7 @@ Test Cards
 378282246310005  (amex)
 """
 
-# Number of reverse proxies in front of the app (Caddy in production = 1).
+# Set to True when the app runs behind a reverse proxy (Caddy in production).
 # Used to record the signer's real IP address on electronic waivers.
-# Leave at 0 when running `python server.py` directly.
-TRUSTED_PROXY_COUNT = 0
+# Leave False when running `python server.py` directly.
+IS_BEHIND_PROXY = False
