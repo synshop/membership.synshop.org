@@ -28,25 +28,31 @@
       waiverDobIsValid: false
     };
 
+    // Only complain about a field once the member has visited it, or after
+    // they've tried to submit, so tabbing through the form stays quiet
+    const touched = {};
+    let submitAttempted = false;
+
+    function showError(field) {
+      return submitAttempted || touched[field] == true;
+    }
+
     function setSubmitButtonState() {
 
-      if (user.waiverDobIsValid == false ||
-          user.waiverSignatureIsValid == false ||
-          user.waiverAgree == false ) {
+      msgArray = [];
+      if (user.waiverDobIsValid == false && showError("waiverDob")) {
+        msgArray.push("Date of Birth");
+      }
 
-        msgArray = [];
-        if (user.waiverDobIsValid == false) {
-          msgArray.push("Date of Birth");
-        }
+      if (user.waiverSignatureIsValid == false && showError("waiverSignature")) {
+        msgArray.push("Waiver Signature");
+      }
 
-        if (user.waiverSignatureIsValid == false) {
-          msgArray.push("Waiver Signature");
-        }
+      if (user.waiverAgree == false && showError("waiverAgree")) {
+        msgArray.push("Waiver Agreement checkbox");
+      }
 
-        if (user.waiverAgree == false) {
-          msgArray.push("Waiver Agreement checkbox");
-        }
-
+      if (msgArray.length > 0) {
         msg = "The following fields above are either missing or invalid, please fix: <b>" + msgArray.join(", ") + "</b>";
         $("#form_invalid").html(msg);
         $("#form_invalid").show();
@@ -58,22 +64,30 @@
     };
 
     $("#waiverAgree").on("change", function() {
+      touched.waiverAgree = true;
       user.waiverAgree = $("#waiverAgree").is(":checked");
       setSubmitButtonState();
     });
 
     $("#waiverSignature").on("blur", function() {
+      touched.waiverSignature = true;
       user.waiverSignatureIsValid = checkWaiverSignature();
       setSubmitButtonState();
     });
 
     $("#waiverDob").on("change blur", function() {
+      touched.waiverDob = true;
       user.waiverDobIsValid = checkWaiverDob();
       setSubmitButtonState();
     });
 
     $("#btnSubmit").click(function(e) {
-      // The button starts out enabled, so re-check everything before submitting
+      // The button starts out enabled, so re-check everything before submitting,
+      // showing errors on fields the member hasn't visited yet
+      submitAttempted = true;
+      user.waiverDobIsValid = checkWaiverDob();
+      user.waiverSignatureIsValid = checkWaiverSignature();
+      user.waiverAgree = $("#waiverAgree").is(":checked");
       setSubmitButtonState();
       if ($("#btnSubmit").prop('disabled')) {
         e.preventDefault();

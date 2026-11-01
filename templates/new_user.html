@@ -121,6 +121,25 @@
 
     };
     
+    // Only complain about a field once the member has visited it, or after
+    // they've tried to submit, so tabbing through the form stays quiet
+    const touched = {};
+    let submitAttempted = false;
+
+    function showError(field) {
+      return submitAttempted || touched[field] == true;
+    }
+
+    function checkFullName() {
+      user.fullName = $("#fullName").val();
+      if (user.fullName == "" || user.fullName.trim().length === 0) {
+        $("#fullname-invalid").show();
+        return false;
+      }
+      $("#fullname-invalid").hide();
+      return true;
+    }
+
     function setSubmitButtonState() {
 
       const cardNum = document.querySelector('#cc-number');
@@ -150,43 +169,37 @@
         $('#cc-cvc-invalid').hide();
       }
   
-      if (user.fullNameIsValid == false ||
-          user.waiverDobIsValid == false ||
-          user.waiverSignatureIsValid == false ||
-          user.waiverAgree == false ||
-          user.ccNumberIsValid == false || 
-          user.ccExpDateIsValid == false || 
-          user.ccCVCIsValid == false ) {
+      msgArray = [];
+      if (user.fullNameIsValid == false && showError("fullName")) {
+        msgArray.push("<a href=\"#fullName\" class=\"text-danger\">Full Name</a>");
+      }
 
-        msgArray = [];
-        if (user.fullNameIsValid == false) {
-          msgArray.push("<a href=\"#fullName\" class=\"text-danger\">Full Name</a>");
-        }
+      if (user.waiverDobIsValid == false && showError("waiverDob")) {
+        msgArray.push("Date of Birth");
+      }
 
-        if (user.waiverDobIsValid == false) {
-          msgArray.push("Date of Birth");
-        }
+      if (user.waiverSignatureIsValid == false && showError("waiverSignature")) {
+        msgArray.push("Waiver Signature");
+      }
 
-        if (user.waiverSignatureIsValid == false) {
-          msgArray.push("Waiver Signature");
-        }
+      if (user.waiverAgree == false && showError("waiverAgree")) {
+        msgArray.push("Waiver Agreement checkbox");
+      }
 
-        if (user.waiverAgree == false) {
-          msgArray.push("Waiver Agreement checkbox");
-        }
+      // Stripe only marks a card field invalid after something has been typed in it
+      if (user.ccNumberIsValid == false) {
+        msgArray.push("CC Num");
+      }
 
-        if (user.ccNumberIsValid == false) {
-          msgArray.push("CC Num");
-        }
+      if (user.ccExpDateIsValid == false) {
+        msgArray.push("CC Exp Date");
+      }
 
-        if (user.ccExpDateIsValid == false) {
-          msgArray.push("CC Exp Date");
-        }
+      if (user.ccCVCIsValid == false) {
+        msgArray.push("CC CVC");
+      }
 
-        if (user.ccCVCIsValid == false) {
-          msgArray.push("CC CVC");
-        }
-        
+      if (msgArray.length > 0) {
         msg = "The following fields above are either missing or invalid, please fix: <b>" + msgArray.join(", ") + "</b>";
         $("#form_invalid").html(msg);
         $("#form_invalid").show();
@@ -198,28 +211,25 @@
     };
 
     $("#fullName").on("blur", function() {
-      user.fullName = $("#fullName").val();
-      if (user.fullName == "" || user.fullName.trim().length === 0) {
-        $("#fullname-invalid").show();
-        user.fullNameIsValid = false;
-      } else {
-        $("#fullname-invalid").hide();
-        user.fullNameIsValid = true;
-      }
+      touched.fullName = true;
+      user.fullNameIsValid = checkFullName();
       setSubmitButtonState();
     });
 
     $("#waiverAgree").on("change", function() {
+      touched.waiverAgree = true;
       user.waiverAgree = $("#waiverAgree").is(":checked");
       setSubmitButtonState();
     });
 
     $("#waiverSignature").on("blur", function() {
+      touched.waiverSignature = true;
       user.waiverSignatureIsValid = checkWaiverSignature();
       setSubmitButtonState();
     });
 
     $("#waiverDob").on("change blur", function() {
+      touched.waiverDob = true;
       user.waiverDobIsValid = checkWaiverDob();
       setSubmitButtonState();
     });
@@ -268,7 +278,13 @@
 
       e.preventDefault();
 
-      // The button starts out enabled, so re-check everything before charging
+      // The button starts out enabled, so re-check everything before charging,
+      // showing errors on fields the member hasn't visited yet
+      submitAttempted = true;
+      user.fullNameIsValid = checkFullName();
+      user.waiverDobIsValid = checkWaiverDob();
+      user.waiverSignatureIsValid = checkWaiverSignature();
+      user.waiverAgree = $("#waiverAgree").is(":checked");
       setSubmitButtonState();
       if ($("#btnSubmit").prop('disabled')) {
         return;
