@@ -55,6 +55,71 @@ def reverse_map_donation_level(d=None, id=None):
 
 ## Stripe functions
 
+# Raised when the first payment on a new subscription needs the member to
+# authenticate (3D Secure); `url` is the Stripe-hosted invoice page where they can
+class PaymentActionRequired(Exception):
+    def __init__(self, url=None):
+        super().__init__(url)
+        self.url = url
+
+def create_setup_intent(email=None, customer_id=None):
+    # New members don't have a Customer yet, so their SetupIntent has none;
+    # the confirmed card is attached when the Customer is created
+    try:
+        return stripe.SetupIntent.create(
+            customer = customer_id,
+            payment_method_types = ["card"],
+            usage = "off_session",
+            metadata = {"email": email}
+        )
+    except stripe.error.StripeError as e:
+        log.info("Unable to create SetupIntent for " + str(email) + ". Error is: " + str(e))
+        return None
+
+# Return the card from a SetupIntent the browser confirmed, after checking it
+# belongs to this member; the SetupIntent ID comes from the browser, so never trust it
+def get_setup_intent_payment_method(setup_intent_id=None, email=None, customer_id=None):
+    if not setup_intent_id:
+        return None
+
+    try:
+        si = stripe.SetupIntent.retrieve(setup_intent_id)
+    except stripe.error.StripeError as e:
+        log.info("Unable to retrieve SetupIntent " + str(setup_intent_id) + ". Error is: " + str(e))
+        return None
+
+    if si.status != "succeeded" or si.metadata.get("email") != email or si.customer != customer_id:
+        log.info("SetupIntent " + si.id + " is not usable for " + str(email) + " (status " + si.status + ")")
+        return None
+
+    return si.payment_method
+
+# Create a subscription and attempt its first payment right away. Returns the
+# subscription, or None if the card was declined (the incomplete subscription
+# is deleted so it doesn't linger)
+def start_subscription(customer_id=None, items=None):
+    s = stripe.Subscription.create(
+        customer = customer_id,
+        items = items,
+        proration_behavior = 'none',
+        payment_behavior = 'allow_incomplete',
+        expand = ['latest_invoice.payment_intent']
+    )
+
+    if s.status != "incomplete" or payment_action_url(s):
+        return s
+
+    log.info("First payment failed for " + customer_id + ", deleting incomplete subscription " + s.id)
+    stripe.Subscription.delete(s.id)
+    return None
+
+# The hosted invoice URL when the subscription's first payment is waiting on 3D Secure
+def payment_action_url(s=None):
+    pi = s.latest_invoice.payment_intent if s.latest_invoice else None
+    if s.status == "incomplete" and pi and pi.status == "requires_action":
+        return s.latest_invoice.hosted_invoice_url
+    return None
+
 def has_stripe_account(email=None):
     sr=stripe.Customer.search(query='email: "' + email + '"', limit=1)
     return len(sr['data'])
@@ -150,11 +215,12 @@ def create_new_member(user=None):
     if user["membershipRadio"] == "m+l":
         locker_fee = True
 
-    real_card = {"token" : user["stripeToken"]}
+    pm = get_setup_intent_payment_method(user.get("setupIntentId"), user["email"])
+    if pm is None:
+        return False
 
     try:
 
-        pm = stripe.PaymentMethod.create(type="card",card=real_card)
         sc = stripe.Customer.create(
             email = user["email"],
             name = user["fullName"],
@@ -167,14 +233,21 @@ def create_new_member(user=None):
             }
         )
         
-        stripe.Subscription.create(
-            customer = sc.id,
-            items = build_subscription_plan(locker_fee, donation_amount, payment_freq),
-            proration_behavior = 'none'
-        )
-
         log.info("Creating new member account " + sc.id)
+
+        # A declined card leaves the Customer without a subscription; the
+        # member can add a new card from /update
+        s = start_subscription(sc.id, build_subscription_plan(locker_fee, donation_amount, payment_freq))
+        if s is None:
+            return False
+
+        url = payment_action_url(s)
+        if url:
+            raise PaymentActionRequired(url)
+
         return True
+    except PaymentActionRequired:
+        raise
     except Exception as e:
         log.info(e)
         return False
@@ -228,7 +301,7 @@ def update_member_stripe_account(user=None):
 
     has_payment_method = bool(member["current_payment_method"])
 
-    if user["deleteCurrentPaymentMethod"] == "1" and not user.get("stripeToken"):
+    if user["deleteCurrentPaymentMethod"] == "1" and not user.get("setupIntentId"):
 
         # Canceled members may remove their card without replacing it
         if member["membership_fees"] != "c":
@@ -246,20 +319,20 @@ def update_member_stripe_account(user=None):
 
     elif user["deleteCurrentPaymentMethod"] == "1":
 
-        # Member adds a new card:
-        #   1) create a new PaymentMethod
-        #   2) attach it to the Stripe Customer
-        #   3) set new PaymentMethod as Customer default
-        #   4) detach the old PaymentMethod, if there was one
+        # Member adds a new card. The browser already confirmed a SetupIntent
+        # (running 3D Secure if the bank asked), which attached the card, so:
+        #   1) get the new PaymentMethod from the SetupIntent
+        #   2) set new PaymentMethod as Customer default
+        #   3) detach the old PaymentMethod, if there was one
+
+        pm = get_setup_intent_payment_method(user.get("setupIntentId"), member["email"], member["stripe_id"])
+        if pm is None:
+            return False
 
         try:
-            real_card = {"token" : user["stripeToken"]}
-            pm = stripe.PaymentMethod.create(type="card",card=real_card)
-            x = stripe.PaymentMethod.attach(pm,customer=member["stripe_id"])
-
             stripe.Customer.modify(
                 member["stripe_id"],
-                invoice_settings = {"default_payment_method" : x}
+                invoice_settings = {"default_payment_method" : pm}
             )
             has_payment_method = True
 
@@ -301,15 +374,21 @@ def update_member_stripe_account(user=None):
                 payment_freq=member["payment_freq"]
             )
 
-            cancel_current_subscription_plan(member["stripe_id"])
+            # Start the new subscription before canceling the old one, so a
+            # declined card leaves the member on their current plan
+            s = start_subscription(member["stripe_id"], sp)
+            if s is None:
+                return False
 
-            stripe.Subscription.create(
-                customer = member["stripe_id"],
-                items = sp,
-                proration_behavior = 'none'
-            )
+            cancel_current_subscription_plan(member["stripe_id"], keep=s.id)
 
             log.info("Updating Stripe information for member account " + member["stripe_id"])
+
+            url = payment_action_url(s)
+            if url:
+                raise PaymentActionRequired(url)
+        except PaymentActionRequired:
+            raise
         except Exception as e:
             log.info(e)
             return False
@@ -403,10 +482,12 @@ def get_current_subscription_plan(c=None):
 
     return subscriptions
 
-def cancel_current_subscription_plan(c=None):
+def cancel_current_subscription_plan(c=None, keep=None):
 
     try:
         for s in stripe.Subscription.list(customer=c, limit=10):
+            if s.id == keep:
+                continue
             print("canceling current subscriptions...")
             stripe.Subscription.delete(s.id, prorate=False)
     except Exception as e:

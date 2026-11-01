@@ -328,7 +328,7 @@
           return;
         }
         e.preventDefault();
-        $("#stripeToken").val("");
+        $("#setupIntentId").val("");
         $("#btnSubmit").html("Updating...");
         $("#btnSubmit").prop('disabled', true);
         $('#form1').trigger('submit');
@@ -337,22 +337,34 @@
 
       if ($("#deleteCurrentPaymentMethod").val() == "1"){
         e.preventDefault();
-        console.log("tokenizing new payment method...");
+        console.log("confirming new payment method...");
+        $("#btnSubmit").html("Updating...");
+        $("#btnSubmit").prop('disabled', true);
 
-        var cardData = {'name': user.fullName,};
-        stripe.createToken(cardNum, cardData).then(function(result) {
-          if (result.error && result.error.message){
-            console.log(result.error.message);
-            setSubmitButtonState();
-            $("#form_invalid").html(result.error.message);
-            $("#form_invalid").show();
-          } else {
-            $("#btnSubmit").html("Updating...");
-            $("#btnSubmit").prop('disabled', true);
-            $("#stripeToken").val(result.token.id);
+        // Confirm the card with a SetupIntent; Stripe.js shows the 3D Secure
+        // challenge if the card's bank asks for one
+        fetch("/setup-intent", {method: "POST", headers: {"X-CSRFToken": "{{ csrf_token() }}"}})
+          .then(function(response) {
+            if (!response.ok) { throw new Error("We couldn't start card setup. Please try again."); }
+            return response.json();
+          })
+          .then(function(data) {
+            return stripe.confirmCardSetup(data.client_secret, {
+              payment_method: {card: cardNum, billing_details: {name: user.fullName}}
+            });
+          })
+          .then(function(result) {
+            if (result.error) { throw new Error(result.error.message); }
+            $("#setupIntentId").val(result.setupIntent.id);
             $('#form1').trigger('submit');
-          }
-        });
+          })
+          .catch(function(error) {
+            console.log(error.message);
+            $("#btnSubmit").html("Submit");
+            setSubmitButtonState();
+            $("#form_invalid").text(error.message);
+            $("#form_invalid").show();
+          });
       } else {
           $("#btnSubmit").html("Updating...");
             $("#btnSubmit").prop('disabled', true);
@@ -497,7 +509,7 @@
   <input type="hidden" name="deleteCurrentPaymentMethod" id="deleteCurrentPaymentMethod" value="0"/>
   <input type="hidden" name="pageIsDirty" id="pageIsDirty" value="0"/>
   <input type="hidden" name="reallyDeleteMembership" id="reallyDeleteMembership"/>
-  <input type="hidden" name="stripeToken" id="stripeToken" value="" />
+  <input type="hidden" name="setupIntentId" id="setupIntentId" value="" />
 
     <div class="alert alert-warning shadow rounded" role="alert" name="notice" id="notice" style="width:85%;">
     <h4 class="alert-heading">Update Your Membership</h4>

@@ -230,18 +230,33 @@
 
       e.preventDefault();
 
-      var cardData = {'name': user.fullName,};
-      stripe.createToken(cardNum, cardData).then(function(result) {
-        if (result.error && result.error.message){
-          console.log(result.error.message);
-          setSubmitButtonState();
-        } else {
-          $("#btnSubmit").html("Updating...");
-          $("#btnSubmit").prop('disabled', true);
-          $("#stripeToken").val(result.token.id);
+      $("#btnSubmit").html("Updating...");
+      $("#btnSubmit").prop('disabled', true);
+
+      // Confirm the card with a SetupIntent; Stripe.js shows the 3D Secure
+      // challenge if the card's bank asks for one
+      fetch("/setup-intent", {method: "POST", headers: {"X-CSRFToken": "{{ csrf_token() }}"}})
+        .then(function(response) {
+          if (!response.ok) { throw new Error("We couldn't start card setup. Please try again."); }
+          return response.json();
+        })
+        .then(function(data) {
+          return stripe.confirmCardSetup(data.client_secret, {
+            payment_method: {card: cardNum, billing_details: {name: user.fullName}}
+          });
+        })
+        .then(function(result) {
+          if (result.error) { throw new Error(result.error.message); }
+          $("#setupIntentId").val(result.setupIntent.id);
           $('#form1').trigger('submit');
-        }
-      });
+        })
+        .catch(function(error) {
+          console.log(error.message);
+          $("#btnSubmit").html("Submit");
+          setSubmitButtonState();
+          $("#form_invalid").text(error.message);
+          $("#form_invalid").show();
+        });
     });
 
     $("#btnCancel").click(function() {
@@ -251,7 +266,7 @@
     update_summary();
     $('#form1').preventDoubleSubmission();
 
-    {% with messages = get_flashed_messages() %}
+    {% with messages = get_flashed_messages(category_filter=["message"]) %}
       {% if messages %}
 
       $("#update_notice").show();
@@ -271,6 +286,14 @@
   <div class="alert alert-success" role="alert" name="update_notice" id="update_notice">
     <strong>You don't appear to have a billing account, so we are starting the set up process for you</strong>
   </div>
+
+  {% with errors = get_flashed_messages(category_filter=["error"]) %}
+    {% for error in errors %}
+    <div class="alert alert-danger" role="alert">
+      <strong>{{ error }}</strong>
+    </div>
+    {% endfor %}
+  {% endwith %}
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-sm" style="background-color: #eee;">
@@ -316,7 +339,7 @@
   <form method="POST" name="form1" id="form1">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" name="email" value="{{ email }}"/>
-    <input type="hidden" name="stripeToken" id="stripeToken" value="" />
+    <input type="hidden" name="setupIntentId" id="setupIntentId" value="" />
 
     <div class="alert alert-warning shadow rounded" role="alert" style="width:85%;">
     <h4 class="alert-heading">Welcome to SYN Shop!</h4>
