@@ -364,10 +364,6 @@
       }
     });
 
-    $("#btnCancel").click(function() {
-      window.location.replace("/");
-    });
-
     $("#btnYesDelete").click(function() {
       console.log("Deleting Membership...");
       $("#reallyDeleteMembership").val(1);
@@ -841,9 +837,6 @@
         <div class="row g-3 d-none" id="submitControls">
           <div class="col-auto">
             <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit" disabled>Submit</button>
-          </div>
-          <div class="col-auto">
-            <button type="button" class="btn btn-lg btn-secondary btn-block" name="btnCancel" id="btnCancel">Cancel</button>
           </div>
           <div class="col">
             <button type="button" 
