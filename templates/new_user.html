@@ -140,35 +140,30 @@
       return true;
     }
 
+    // Stripe marks a card field invalid once something wrong is typed in it, but
+    // an empty field isn't "invalid", so also track whether each one is complete
+    // (from Stripe's change events)
+    const cardComplete = { "cc-number": false, "cc-exp": false, "cc-cvc": false };
+
+    function cardFieldIsValid(id) {
+      return cardComplete[id] && !document.getElementById(id).classList.contains('StripeElement--invalid');
+    }
+
+    // Like showError, but a card field Stripe has flagged invalid is shown right away
+    function showCardError(id) {
+      return document.getElementById(id).classList.contains('StripeElement--invalid') || showError(id);
+    }
+
     function setSubmitButtonState() {
 
-      const cardNum = document.querySelector('#cc-number');
-      if (cardNum.classList.contains('StripeElement--invalid') == true) {
-        user.ccNumberIsValid = false;
-        $('#cc-number-invalid').show();
-      } else {
-        user.ccNumberIsValid = true;
-        $('#cc-number-invalid').hide();
-      }
-      
-      const cardExp = document.querySelector('#cc-exp');
-      if (cardExp.classList.contains('StripeElement--invalid') == true) {
-        user.ccExpDateIsValid = false;
-        $('#cc-exp-invalid').show();
-      } else {
-        user.ccExpDateIsValid = true;
-        $('#cc-exp-invalid').hide();
+      user.ccNumberIsValid = cardFieldIsValid("cc-number");
+      user.ccExpDateIsValid = cardFieldIsValid("cc-exp");
+      user.ccCVCIsValid = cardFieldIsValid("cc-cvc");
+
+      for (const id of ["cc-number", "cc-exp", "cc-cvc"]) {
+        $('#' + id + '-invalid').toggle(!cardFieldIsValid(id) && showCardError(id));
       }
 
-      const cardCvc = document.querySelector('#cc-cvc');
-      if (cardCvc.classList.contains('StripeElement--invalid') == true) {
-        user.ccCVCIsValid = false;
-        $('#cc-cvc-invalid').show();
-      } else {
-        user.ccCVCIsValid = true;
-        $('#cc-cvc-invalid').hide();
-      }
-  
       msgArray = [];
       if (user.fullNameIsValid == false && showError("fullName")) {
         msgArray.push("<a href=\"#fullName\" class=\"text-danger\">Full Name</a>");
@@ -186,16 +181,15 @@
         msgArray.push("<a href=\"#waiverAgree\" class=\"text-danger\">Waiver Agreement checkbox</a>");
       }
 
-      // Stripe only marks a card field invalid after something has been typed in it
-      if (user.ccNumberIsValid == false) {
+      if (user.ccNumberIsValid == false && showCardError("cc-number")) {
         msgArray.push("<a href=\"#cc-number\" class=\"text-danger\">CC Num</a>");
       }
 
-      if (user.ccExpDateIsValid == false) {
+      if (user.ccExpDateIsValid == false && showCardError("cc-exp")) {
         msgArray.push("<a href=\"#cc-exp\" class=\"text-danger\">CC Exp Date</a>");
       }
 
-      if (user.ccCVCIsValid == false) {
+      if (user.ccCVCIsValid == false && showCardError("cc-cvc")) {
         msgArray.push("<a href=\"#cc-cvc\" class=\"text-danger\">CC CVC</a>");
       }
 
@@ -280,17 +274,16 @@
       update_summary();
     });
 
-    cardNum.on('blur', function(event) {
-      setSubmitButtonState();
-    });
+    for (const [id, element] of Object.entries(stripeFields)) {
+      element.on('change', function(event) {
+        cardComplete[id] = event.complete;
+      });
 
-    cardExp.on('blur', function(event) {
-      setSubmitButtonState();
-    });
-
-    cardCvc.on('blur', function(event) {
-      setSubmitButtonState();
-    });
+      element.on('blur', function(event) {
+        touched[id] = true;
+        setSubmitButtonState();
+      });
+    }
 
     $("#btnSubmit").click(function(e) {
 
