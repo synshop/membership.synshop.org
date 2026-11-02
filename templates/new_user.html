@@ -175,28 +175,28 @@
       }
 
       if (user.waiverDobIsValid == false && showError("waiverDob")) {
-        msgArray.push("Date of Birth");
+        msgArray.push("<a href=\"#waiverDobMonth\" class=\"text-danger\">Date of Birth</a>");
       }
 
       if (user.waiverSignatureIsValid == false && showError("waiverSignature")) {
-        msgArray.push("Waiver Signature");
+        msgArray.push("<a href=\"#waiverSignature\" class=\"text-danger\">Waiver Signature</a>");
       }
 
       if (user.waiverAgree == false && showError("waiverAgree")) {
-        msgArray.push("Waiver Agreement checkbox");
+        msgArray.push("<a href=\"#waiverAgree\" class=\"text-danger\">Waiver Agreement checkbox</a>");
       }
 
       // Stripe only marks a card field invalid after something has been typed in it
       if (user.ccNumberIsValid == false) {
-        msgArray.push("CC Num");
+        msgArray.push("<a href=\"#cc-number\" class=\"text-danger\">CC Num</a>");
       }
 
       if (user.ccExpDateIsValid == false) {
-        msgArray.push("CC Exp Date");
+        msgArray.push("<a href=\"#cc-exp\" class=\"text-danger\">CC Exp Date</a>");
       }
 
       if (user.ccCVCIsValid == false) {
-        msgArray.push("CC CVC");
+        msgArray.push("<a href=\"#cc-cvc\" class=\"text-danger\">CC CVC</a>");
       }
 
       if (msgArray.length > 0) {
@@ -209,6 +209,24 @@
         $("#btnSubmit").prop('disabled', false);
       }
     };
+
+    // Links in the error summary scroll to their field and put the cursor in it.
+    // The card fields are Stripe iframes, so they're focused through Stripe.
+    const stripeFields = { "cc-number": cardNum, "cc-exp": cardExp, "cc-cvc": cardCvc };
+    $("#form_invalid").on("click", "a[href^='#']", function(e) {
+      const id = $(this).attr("href").substring(1);
+      const field = document.getElementById(id);
+      if (!field) {
+        return;
+      }
+      e.preventDefault();
+      field.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (stripeFields[id]) {
+        stripeFields[id].focus();
+      } else {
+        field.focus({ preventScroll: true });
+      }
+    });
 
     $("#fullName").on("blur", function() {
       touched.fullName = true;

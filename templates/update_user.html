@@ -188,19 +188,19 @@
 
         msgArray = [];
         if (user.fullNameIsValid == false) {
-          msgArray.push("Full Name");
+          msgArray.push("<a href=\"#fullName\" class=\"text-danger\">Full Name</a>");
         }
 
         if (user.ccNumberIsValid == false) {
-          msgArray.push("CC Num");
+          msgArray.push("<a href=\"#cc-number\" class=\"text-danger\">CC Num</a>");
         }
 
         if (user.ccExpDateIsValid == false) {
-          msgArray.push("CC Exp Date");
+          msgArray.push("<a href=\"#cc-exp\" class=\"text-danger\">CC Exp Date</a>");
         }
 
         if (user.ccCVCIsValid == false) {
-          msgArray.push("CC CVC");
+          msgArray.push("<a href=\"#cc-cvc\" class=\"text-danger\">CC CVC</a>");
         }
         
         msg = "The following fields above are either missing or invalid, please fix: <b>" + msgArray.join(", ") + "</b>";
@@ -213,6 +213,24 @@
       }
     };
   
+    // Links in the error summary scroll to their field and put the cursor in it.
+    // The card fields are Stripe iframes, so they're focused through Stripe.
+    const stripeFields = { "cc-number": cardNum, "cc-exp": cardExp, "cc-cvc": cardCvc };
+    $("#form_invalid").on("click", "a[href^='#']", function(e) {
+      const id = $(this).attr("href").substring(1);
+      const field = document.getElementById(id);
+      if (!field) {
+        return;
+      }
+      e.preventDefault();
+      field.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (stripeFields[id]) {
+        stripeFields[id].focus();
+      } else {
+        field.focus({ preventScroll: true });
+      }
+    });
+
     $("#fullName").on("blur", function() {
       user.fullName = $("#fullName").val();
       if (user.fullName == "" || user.fullName.trim().length === 0) {
