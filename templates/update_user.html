@@ -375,7 +375,6 @@
           $("#form_invalid").html("Please enter a card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b> before choosing a membership plan.");
           $("#form_invalid").show();
           cardRequiredError = true;
-          focusField("cc-number");
           return;
         }
         $("#deleteCurrentPaymentMethod").val("0");
@@ -388,7 +387,6 @@
           $("#form_invalid").html("Please enter a new card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b>.");
           $("#form_invalid").show();
           cardRequiredError = true;
-          focusField("cc-number");
           return;
         }
         e.preventDefault();
