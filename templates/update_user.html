@@ -21,6 +21,10 @@
  
   $( document ).ready(function() {
 
+    // The submit controls stay hidden and disabled unless JavaScript is running (issue #87)
+    $("#btnSubmit").prop('disabled', false);
+    $("#submitControls").removeClass("d-none");
+
     var stripe = Stripe('{{stripe_pk}}');
     const elements = stripe.elements();
 
@@ -84,7 +88,7 @@
       fullNameIsValid: true,
       ccNumberIsValid: true,
       ccExpDateIsValid: true,
-      ccCVVIsValid: true,
+      ccCVCIsValid: true,
       membershipFeeSubtotal: function () {
         return (this.membershipFee * this.paymentFrequency);
       },
@@ -148,76 +152,115 @@
       }
     };
 
+    // Only complain about a field once the member has visited it, or after
+    // they've tried to submit, so tabbing through the form stays quiet
+    const touched = {};
+    let submitAttempted = false;
+
+    // Set while the "Please enter a card in Payment Information" error is up, so
+    // it stays on screen until the member starts typing a card
+    let cardRequiredError = false;
+
+    function showError(field) {
+      return submitAttempted || touched[field] == true;
+    }
+
+    function checkFullName() {
+      user.fullName = $("#fullName").val();
+      if (user.fullName == "" || user.fullName.trim().length === 0) {
+        $("#fullname-invalid").show();
+        return false;
+      }
+      $("#fullname-invalid").hide();
+      return true;
+    }
+
+    // A new card is optional here, but once the member starts typing one, all
+    // three card fields have to be complete. Stripe marks a field invalid once
+    // something wrong is typed in it, but an empty field isn't "invalid", so
+    // track whether each one is empty or complete (from Stripe's change events)
+    const cardEmpty = { "cc-number": true, "cc-exp": true, "cc-cvc": true };
+    const cardComplete = { "cc-number": false, "cc-exp": false, "cc-cvc": false };
+
+    function cardFieldIsValid(id) {
+      if (!user.cardEntered) {
+        return true;
+      }
+      return cardComplete[id] && !document.getElementById(id).classList.contains('StripeElement--invalid');
+    }
+
+    // Like showError, but a card field Stripe has flagged invalid is shown right away
+    function showCardError(id) {
+      return document.getElementById(id).classList.contains('StripeElement--invalid') || showError(id);
+    }
+
     function setSubmitButtonState() {
 
-      const cardNum = document.querySelector('#cc-number');
-      if (cardNum.classList.contains('StripeElement--invalid') == true) {
-        user.ccNumberIsValid = false;
-        $('#cc-number-invalid').show();
-      } else {
-        user.ccNumberIsValid = true;
-        $('#cc-number-invalid').hide();
+      user.ccNumberIsValid = cardFieldIsValid("cc-number");
+      user.ccExpDateIsValid = cardFieldIsValid("cc-exp");
+      user.ccCVCIsValid = cardFieldIsValid("cc-cvc");
+
+      for (const id of ["cc-number", "cc-exp", "cc-cvc"]) {
+        $('#' + id + '-invalid').toggle(!cardFieldIsValid(id) && showCardError(id));
       }
 
-      const cardExp = document.querySelector('#cc-exp');
-      if (cardExp.classList.contains('StripeElement--invalid') == true) {
-        user.ccExpDateIsValid = false;
-        $('#cc-exp-invalid').show();
-      } else {
-        user.ccExpDateIsValid = true;
-        $('#cc-exp-invalid').hide();
+      msgArray = [];
+      if (user.fullNameIsValid == false && showError("fullName")) {
+        msgArray.push("<a href=\"#fullName\" class=\"text-danger\">Full Name</a>");
       }
 
-      const cardCvc = document.querySelector('#cc-cvc');
-      if (cardCvc.classList.contains('StripeElement--invalid') == true) {
-        user.ccCVCIsValid = false;
-        $('#cc-cvc-invalid').show();
-      } else {
-        user.ccCVCIsValid = true;
-        $('#cc-cvc-invalid').hide();
+      if (user.ccNumberIsValid == false && showCardError("cc-number")) {
+        msgArray.push("<a href=\"#cc-number\" class=\"text-danger\">CC Num</a>");
       }
 
-      if (user.fullNameIsValid == false || 
-          user.ccNumberIsValid == false || 
-          user.ccExpDateIsValid == false || 
-          user.ccCVCIsValid == false ) {
+      if (user.ccExpDateIsValid == false && showCardError("cc-exp")) {
+        msgArray.push("<a href=\"#cc-exp\" class=\"text-danger\">CC Exp Date</a>");
+      }
 
-        msgArray = [];
-        if (user.fullNameIsValid == false) {
-          msgArray.push("Full Name");
-        }
+      if (user.ccCVCIsValid == false && showCardError("cc-cvc")) {
+        msgArray.push("<a href=\"#cc-cvc\" class=\"text-danger\">CC CVC</a>");
+      }
 
-        if (user.ccNumberIsValid == false) {
-          msgArray.push("CC Num");
-        }
-
-        if (user.ccExpDateIsValid == false) {
-          msgArray.push("CC Exp Date");
-        }
-
-        if (user.ccCVCIsValid == false) {
-          msgArray.push("CC CVC");
-        }
-        
+      if (msgArray.length > 0) {
         msg = "The following fields above are either missing or invalid, please fix: <b>" + msgArray.join(", ") + "</b>";
         $("#form_invalid").html(msg);
         $("#form_invalid").show();
         $("#btnSubmit").prop('disabled', true);
       } else {
-        $("#form_invalid").hide();
+        if (!cardRequiredError) {
+          $("#form_invalid").hide();
+        }
         $("#btnSubmit").prop('disabled', false);
       }
     };
   
-    $("#fullName").on("blur", function() {
-      user.fullName = $("#fullName").val();
-      if (user.fullName == "" || user.fullName.trim().length === 0) {
-        $("#fullname-invalid").show();
-        user.fullNameIsValid = false;
-      } else {
-        $("#fullname-invalid").hide();
-        user.fullNameIsValid = true;
+    // Scrolls to the field with this id and puts the cursor in it. The card
+    // fields are Stripe iframes, so they're focused through Stripe.
+    const stripeFields = { "cc-number": cardNum, "cc-exp": cardExp, "cc-cvc": cardCvc };
+    function focusField(id) {
+      const field = document.getElementById(id);
+      if (!field) {
+        return false;
       }
+      field.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (stripeFields[id]) {
+        stripeFields[id].focus();
+      } else {
+        field.focus({ preventScroll: true });
+      }
+      return true;
+    }
+
+    // Links in the error summary jump to their field
+    $("#form_invalid").on("click", "a[href^='#']", function(e) {
+      if (focusField($(this).attr("href").substring(1))) {
+        e.preventDefault();
+      }
+    });
+
+    $("#fullName").on("blur", function() {
+      touched.fullName = true;
+      user.fullNameIsValid = checkFullName();
       setSubmitButtonState();
     });
 
@@ -229,7 +272,14 @@
 
       $("#pageIsDirty").val(1);
       var fee = $("input[name='membershipRadio']:checked").val();
-    
+
+      // A "Please enter a card" error only applies to the plan it was shown for;
+      // canceling doesn't need a card at all
+      if (cardRequiredError) {
+        cardRequiredError = false;
+        setSubmitButtonState();
+      }
+
       user.membershipIsCanceled = false;
 
       if (fee == "m") {
@@ -279,21 +329,21 @@
       update_summary();
     });
     
-    cardNum.on('change', function(event) {
-      user.cardEntered = !event.empty;
-    });
+    for (const [id, element] of Object.entries(stripeFields)) {
+      element.on('change', function(event) {
+        cardEmpty[id] = event.empty;
+        cardComplete[id] = event.complete;
+        user.cardEntered = Object.values(cardEmpty).includes(false);
+        if (user.cardEntered) {
+          cardRequiredError = false;
+        }
+      });
 
-    cardNum.on('blur', function(event) {
-      setSubmitButtonState();
-    });
-
-    cardExp.on('blur', function(event) {
-      setSubmitButtonState();
-    });
-
-    cardCvc.on('blur', function(event) {
-      setSubmitButtonState();
-    });
+      element.on('blur', function(event) {
+        touched[id] = true;
+        setSubmitButtonState();
+      });
+    }
 
     $("#btnCardDelete").click(function() {
       console.log("deleting card " + user.currentPaymentMethod );
@@ -308,12 +358,23 @@
 
     $("#btnSubmit").click(function(e) {
 
+      // Re-check everything, showing errors on fields the member hasn't visited yet
+      submitAttempted = true;
+      cardRequiredError = false;
+      user.fullNameIsValid = checkFullName();
+      setSubmitButtonState();
+      if ($("#btnSubmit").prop('disabled')) {
+        e.preventDefault();
+        return;
+      }
+
       if (!user.hasPaymentMethod && !user.cardEntered) {
         const fee = $("input[name='membershipRadio']:checked").val();
         if ($("#pageIsDirty").val() == "1" && (fee == "m" || fee == "m+l")) {
           e.preventDefault();
-          $("#form_invalid").html("Please enter a card in <b>Payment Information</b> before choosing a membership plan.");
+          $("#form_invalid").html("Please enter a card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b> before choosing a membership plan.");
           $("#form_invalid").show();
+          cardRequiredError = true;
           return;
         }
         $("#deleteCurrentPaymentMethod").val("0");
@@ -323,8 +384,9 @@
       if (user.hasPaymentMethod && !user.cardEntered && $("#deleteCurrentPaymentMethod").val() == "1") {
         if ($("input[name='membershipRadio']:checked").val() != "c") {
           e.preventDefault();
-          $("#form_invalid").html("Please enter a new card in <b>Payment Information</b>, or choose <b>Cancel Membership</b> to remove your card.");
+          $("#form_invalid").html("Please enter a new card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b>.");
           $("#form_invalid").show();
+          cardRequiredError = true;
           return;
         }
         e.preventDefault();
@@ -344,7 +406,8 @@
           if (result.error && result.error.message){
             console.log(result.error.message);
             setSubmitButtonState();
-            $("#form_invalid").html(result.error.message);
+            // Stripe's message is about the card, so link it to the card fields
+            $("#form_invalid").empty().append($("<a>", { href: "#cc-number", "class": "text-danger", text: result.error.message }));
             $("#form_invalid").show();
           } else {
             $("#btnSubmit").html("Updating...");
@@ -358,10 +421,6 @@
             $("#btnSubmit").prop('disabled', true);
             $('#form1').trigger('submit');
       }
-    });
-
-    $("#btnCancel").click(function() {
-      window.location.replace("/");
     });
 
     $("#btnYesDelete").click(function() {
@@ -615,7 +674,7 @@
           </li>
           <li class="list-group-item">
             <input class="form-check-input me-1" type="radio" name="membershipRadio" value="m+l" id="membershipFeeAndLocker">
-            <label class="form-check-label stretched-link" for="membershipFeeAndLocker">${{ mf }} / Month Membership + {{ lf }} / Month Locker Fee </label>
+            <label class="form-check-label stretched-link" for="membershipFeeAndLocker">${{ mf }} / Month Membership + ${{ lf }} / Month Locker Fee </label>
           </li>
           <li class="list-group-item">
             <input class="form-check-input me-1" type="radio" name="membershipRadio" value="c" id="membershipCanceled">
@@ -829,12 +888,14 @@
         <div class="invalid-feedback" id="form_invalid" style="padding-bottom: 10px;">
           Please fix the errors above before continuing
         </div>
-        <div class="row g-3">
-          <div class="col-auto">
-            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit">Submit</button>
+        <noscript>
+          <div class="alert alert-danger" role="alert">
+            <strong>JavaScript is required.</strong> Please enable JavaScript in your browser and reload this page to continue.
           </div>
+        </noscript>
+        <div class="row g-3 d-none" id="submitControls">
           <div class="col-auto">
-            <button type="button" class="btn btn-lg btn-secondary btn-block" name="btnCancel" id="btnCancel">Cancel</button>
+            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit" disabled>Save Changes</button>
           </div>
           <div class="col">
             <button type="button" 

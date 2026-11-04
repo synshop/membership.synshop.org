@@ -141,7 +141,7 @@ def get_member_stripe_account(email=None):
 
     return member
 
-def create_new_member(user=None):
+def create_new_member(user=None, waiver_metadata=None):
 
     locker_fee = False
     donation_amount = user["donationRadio"]
@@ -158,8 +158,11 @@ def create_new_member(user=None):
         sc = stripe.Customer.create(
             email = user["email"],
             name = user["fullName"],
+            # The signed waiver is recorded with the Customer itself, so a
+            # member can't be created without it
             metadata = {
                 'discord_id': user["discordId"],
+                **(waiver_metadata or {}),
             },
             payment_method = pm,
             invoice_settings = {
@@ -315,6 +318,17 @@ def update_member_stripe_account(user=None):
             return False
 
     return True
+
+# Record a waiver signed by an existing member. Stripe merges metadata keys,
+# so this leaves discord_id and any other metadata in place.
+def record_waiver(stripe_id=None, waiver_metadata=None):
+    try:
+        stripe.Customer.modify(stripe_id, metadata = waiver_metadata)
+        log.info("Recorded waiver " + waiver_metadata["waiver_version"] + " for member account " + stripe_id)
+        return True
+    except Exception as e:
+        log.info(e)
+        return False
 
 def delete_membership(id):
     try:

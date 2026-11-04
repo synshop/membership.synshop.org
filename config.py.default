@@ -33,3 +33,8 @@ Test Cards
 6011111111111117 (discover)
 378282246310005  (amex)
 """
+
+# Set to True when the app runs behind a reverse proxy (Caddy in production).
+# Used to record the signer's real IP address on electronic waivers.
+# Leave False when running `python server.py` directly.
+IS_BEHIND_PROXY = False
