@@ -349,7 +349,7 @@
         const fee = $("input[name='membershipRadio']:checked").val();
         if ($("#pageIsDirty").val() == "1" && (fee == "m" || fee == "m+l")) {
           e.preventDefault();
-          $("#form_invalid").html("Please enter a card in <b>Payment Information</b> before choosing a membership plan.");
+          $("#form_invalid").html("Please enter a card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b> before choosing a membership plan.");
           $("#form_invalid").show();
           return;
         }
@@ -360,7 +360,7 @@
       if (user.hasPaymentMethod && !user.cardEntered && $("#deleteCurrentPaymentMethod").val() == "1") {
         if ($("input[name='membershipRadio']:checked").val() != "c") {
           e.preventDefault();
-          $("#form_invalid").html("Please enter a new card in <b>Payment Information</b>, or choose <b>Cancel Membership</b> to remove your card.");
+          $("#form_invalid").html("Please enter a new card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b>, or choose <b><a href=\"#membershipCanceled\" class=\"text-danger\">Cancel Membership</a></b> to remove your card.");
           $("#form_invalid").show();
           return;
         }
@@ -381,7 +381,8 @@
           if (result.error && result.error.message){
             console.log(result.error.message);
             setSubmitButtonState();
-            $("#form_invalid").html(result.error.message);
+            // Stripe's message is about the card, so link it to the card fields
+            $("#form_invalid").empty().append($("<a>", { href: "#cc-number", "class": "text-danger", text: result.error.message }));
             $("#form_invalid").show();
           } else {
             $("#btnSubmit").html("Updating...");
