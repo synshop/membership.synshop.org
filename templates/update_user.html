@@ -360,7 +360,7 @@
       if (user.hasPaymentMethod && !user.cardEntered && $("#deleteCurrentPaymentMethod").val() == "1") {
         if ($("input[name='membershipRadio']:checked").val() != "c") {
           e.preventDefault();
-          $("#form_invalid").html("Please enter a new card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b>, or choose <b><a href=\"#membershipCanceled\" class=\"text-danger\">Cancel Membership</a></b> to remove your card.");
+          $("#form_invalid").html("Please enter a new card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b>.");
           $("#form_invalid").show();
           return;
         }
