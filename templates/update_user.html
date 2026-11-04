@@ -157,6 +157,10 @@
     const touched = {};
     let submitAttempted = false;
 
+    // Set while the "Please enter a card in Payment Information" error is up, so
+    // it stays on screen until the member starts typing a card
+    let cardRequiredError = false;
+
     function showError(field) {
       return submitAttempted || touched[field] == true;
     }
@@ -223,26 +227,34 @@
         $("#form_invalid").show();
         $("#btnSubmit").prop('disabled', true);
       } else {
-        $("#form_invalid").hide();
+        if (!cardRequiredError) {
+          $("#form_invalid").hide();
+        }
         $("#btnSubmit").prop('disabled', false);
       }
     };
   
-    // Links in the error summary scroll to their field and put the cursor in it.
-    // The card fields are Stripe iframes, so they're focused through Stripe.
+    // Scrolls to the field with this id and puts the cursor in it. The card
+    // fields are Stripe iframes, so they're focused through Stripe.
     const stripeFields = { "cc-number": cardNum, "cc-exp": cardExp, "cc-cvc": cardCvc };
-    $("#form_invalid").on("click", "a[href^='#']", function(e) {
-      const id = $(this).attr("href").substring(1);
+    function focusField(id) {
       const field = document.getElementById(id);
       if (!field) {
-        return;
+        return false;
       }
-      e.preventDefault();
       field.scrollIntoView({ behavior: "smooth", block: "center" });
       if (stripeFields[id]) {
         stripeFields[id].focus();
       } else {
         field.focus({ preventScroll: true });
+      }
+      return true;
+    }
+
+    // Links in the error summary jump to their field
+    $("#form_invalid").on("click", "a[href^='#']", function(e) {
+      if (focusField($(this).attr("href").substring(1))) {
+        e.preventDefault();
       }
     });
 
@@ -315,6 +327,9 @@
         cardEmpty[id] = event.empty;
         cardComplete[id] = event.complete;
         user.cardEntered = Object.values(cardEmpty).includes(false);
+        if (user.cardEntered) {
+          cardRequiredError = false;
+        }
       });
 
       element.on('blur', function(event) {
@@ -338,6 +353,7 @@
 
       // Re-check everything, showing errors on fields the member hasn't visited yet
       submitAttempted = true;
+      cardRequiredError = false;
       user.fullNameIsValid = checkFullName();
       setSubmitButtonState();
       if ($("#btnSubmit").prop('disabled')) {
@@ -351,6 +367,8 @@
           e.preventDefault();
           $("#form_invalid").html("Please enter a card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b> before choosing a membership plan.");
           $("#form_invalid").show();
+          cardRequiredError = true;
+          focusField("cc-number");
           return;
         }
         $("#deleteCurrentPaymentMethod").val("0");
@@ -362,6 +380,8 @@
           e.preventDefault();
           $("#form_invalid").html("Please enter a new card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b>.");
           $("#form_invalid").show();
+          cardRequiredError = true;
+          focusField("cc-number");
           return;
         }
         e.preventDefault();
