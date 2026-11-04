@@ -272,7 +272,14 @@
 
       $("#pageIsDirty").val(1);
       var fee = $("input[name='membershipRadio']:checked").val();
-    
+
+      // A "Please enter a card" error only applies to the plan it was shown for;
+      // canceling doesn't need a card at all
+      if (cardRequiredError) {
+        cardRequiredError = false;
+        setSubmitButtonState();
+      }
+
       user.membershipIsCanceled = false;
 
       if (fee == "m") {
