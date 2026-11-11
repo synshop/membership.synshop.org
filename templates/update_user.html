@@ -36,8 +36,6 @@
     cardExp.mount('#cc-exp');
     cardCvc.mount('#cc-cvc');
 
-    $("#update_notice").hide()
-
     $("#newPaymentMethodTable").hide();
     $("#rowMembershipFee").hide();
     $("#rowLockerFee").hide();
@@ -480,29 +478,12 @@
     $('#form1').preventDoubleSubmission();
     update_summary();
 
-    {% with messages = get_flashed_messages(category_filter=["success"]) %}
-      {% if messages %}
-
-      $("#update_notice").show();
-
-      $("#update_notice").fadeTo(5000, 500).slideUp(500, function(){
-        $("#update_notice").slideUp(500);
-      });
-      
-      {% endif %}
-    {% endwith %}
-
   }); // End of document.ready
 
   </script>
 </head>
 
 <body>
-
-<!-- Appearance is controlled via JS, only shows on form update refresh -->
-<div class="alert alert-success" role="alert" name="update_notice" id="update_notice">
-  <strong>Your membership information has been updated...</strong>
-</div>
 
 {% with errors = get_flashed_messages(category_filter=["error"]) %}
   {% for error in errors %}

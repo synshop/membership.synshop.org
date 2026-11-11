@@ -117,7 +117,6 @@ def callback():
             return redirect(url_for("update_user"))
         else:
             app.logger.info(f'CB - {email} was NOT found in Stripe, redirecting to /new...')
-            session["auth0-no-stripe"] = True
             return redirect(url_for("new_user"))
 
     except OAuthError as e:
@@ -150,9 +149,6 @@ def new_user():
         return redirect(url_for("update_user"))
 
     if request.method == 'GET':
-
-        if "auth0-no-stripe" in session:
-            flash("Auth0, no Stripe")
 
         mf=app.config["NEW_USER_MEMBERSHIP_FEE"]
         lf=app.config["NEW_USER_LOCKER_FEE"]
@@ -211,7 +207,6 @@ def update_user():
             app.logger.info(f'Fetching user info for {email} from Stripe for /update...')
          else:
              app.logger.info(f'{email} has an Auth0 account but was NOT found in Stripe, redirecting to /new')
-             flash("new stripe user")
              return redirect(url_for('new_user', email=email, mf=mf, lf=lf, stripe_pk=pk))
              
     if request.method == 'POST':
@@ -238,9 +233,7 @@ def update_user():
             return redirect(url_for('delete_user'))
 
         app.logger.info(f'Updating info for {email} in Stripe...')
-        if update_member_stripe_account(form):
-            flash("Your information has been updated successfully", "success")
-        else:
+        if not update_member_stripe_account(form):
             app.logger.info(f'Update for {email} did not complete')
             flash("We couldn't update your membership. Please check your payment information, or contact support@synshop.org.", "error")
 

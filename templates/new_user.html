@@ -35,7 +35,6 @@
     cardExp.mount('#cc-exp');
     cardCvc.mount('#cc-cvc');
 
-    $("#update_notice").hide()
 
     $("#rowMembershipFee").hide();
     $("#rowLockerFee").hide();
@@ -318,14 +317,6 @@
     update_summary();
     $('#form1').preventDoubleSubmission();
 
-    {% with messages = get_flashed_messages(category_filter=["message"]) %}
-      {% if messages %}
-
-      $("#update_notice").show();
-      
-      {% endif %}
-    {% endwith %}
-
   }); // End of document.ready
 
   </script>
@@ -333,11 +324,6 @@
 </head>
 
 <body>
-
-  <!-- Appearance is controlled via JS, only shows on form update refresh -->
-  <div class="alert alert-success" role="alert" name="update_notice" id="update_notice">
-    <strong>You don't appear to have a billing account, so we are starting the set up process for you</strong>
-  </div>
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-sm" style="background-color: #eee;">
