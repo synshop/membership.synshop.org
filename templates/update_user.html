@@ -511,6 +511,16 @@
   {% endfor %}
 {% endwith %}
 
+{# Only rendered after a save, so it can't flash on a normal page load #}
+{% with saved = get_flashed_messages(category_filter=["success"]) %}
+  {% for message in saved %}
+  <div class="alert alert-success alert-dismissible" role="status">
+    <strong>{{ message }}</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+{% endwith %}
+
 <nav class="navbar navbar-expand-sm" style="background-color: #eee;">
 
   <!-- Toggler Button -->

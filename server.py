@@ -233,9 +233,14 @@ def update_user():
             return redirect(url_for('delete_user'))
 
         app.logger.info(f'Updating info for {email} in Stripe...')
-        if not update_member_stripe_account(form):
+        if update_member_stripe_account(form):
+            flash("Your changes have been saved.", "success")
+        else:
             app.logger.info(f'Update for {email} did not complete')
             flash("We couldn't update your membership. Please check your payment information, or contact support@synshop.org.", "error")
+
+        # Redirect so refreshing the page doesn't resubmit the form
+        return redirect(url_for('update_user'))
 
     member = get_member_stripe_account(email)
     return render_template(
