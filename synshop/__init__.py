@@ -1,4 +1,5 @@
 import stripe, logging, yaml, os
+from datetime import datetime
 from crypto import SettingsUtil, CryptoUtil
 
 log = logging.getLogger('server.app')
@@ -97,6 +98,8 @@ def get_member_stripe_account(email=None):
         "charter_member"        : False,
         "has_subscription"      : False,
         "subscription_status"   : None,
+        "cancel_at_period_end"  : False,
+        "subscription_ends_at"  : None,
         "has_payment_method"    : False
     }
 
@@ -120,6 +123,8 @@ def get_member_stripe_account(email=None):
     member["payment_freq"] = subs["payment_freq"]
     member["has_subscription"] = subs["has_subscription"]
     member["subscription_status"] = subs["subscription_status"]
+    member["cancel_at_period_end"] = subs["cancel_at_period_end"]
+    member["subscription_ends_at"] = subs["subscription_ends_at"]
 
     # A customer without a subscription may not have a card on file either
     if member["payment_method"] is None:
@@ -304,7 +309,7 @@ def update_member_stripe_account(user=None):
                 payment_freq=member["payment_freq"]
             )
 
-            cancel_current_subscription_plan(member["stripe_id"])
+            cancel_current_subscription_plan(member["stripe_id"], at_period_end=False)
 
             stripe.Subscription.create(
                 customer = member["stripe_id"],
@@ -371,7 +376,9 @@ def get_current_subscription_plan(c=None):
         "donation_amount"   : 0,
         "payment_freq"      : 1,
         "has_subscription"  : False,
-        "subscription_status" : None
+        "subscription_status" : None,
+        "cancel_at_period_end" : False,
+        "subscription_ends_at" : None
     }
     try:
         # Subscription.list omits canceled subscriptions by default
@@ -383,6 +390,12 @@ def get_current_subscription_plan(c=None):
 
         subscriptions["has_subscription"] = True
         subscriptions["subscription_status"] = stripe_subscriptions.data[0]["status"]
+
+        # A canceled membership stays active until the end of the paid period
+        if stripe_subscriptions.data[0]["cancel_at_period_end"]:
+            ends_at = datetime.fromtimestamp(stripe_subscriptions.data[0]["current_period_end"])
+            subscriptions["cancel_at_period_end"] = True
+            subscriptions["subscription_ends_at"] = f"{ends_at:%B} {ends_at.day}, {ends_at.year}"
 
         p = stripe_subscriptions.data[0]["items"]["data"]
         i = stripe_subscriptions.data[0]["items"]["data"][0]["price"]["recurring"]["interval"]
@@ -417,12 +430,21 @@ def get_current_subscription_plan(c=None):
 
     return subscriptions
 
-def cancel_current_subscription_plan(c=None):
+# By default a canceled membership runs until the end of the period the member
+# already paid for, then expires without renewing. Plan changes pass
+# at_period_end=False so the old subscription stops before the new one starts.
+def cancel_current_subscription_plan(c=None, at_period_end=True):
 
     try:
         for s in stripe.Subscription.list(customer=c, limit=10):
-            print("canceling current subscriptions...")
-            stripe.Subscription.delete(s.id, prorate=False)
+            # Only a paid-up subscription has a period worth running out;
+            # one that's past due or never got paid is canceled right away
+            if at_period_end and s["status"] in ("active", "trialing"):
+                log.info("Canceling subscription " + s.id + " for " + c + " at the end of the current period")
+                stripe.Subscription.modify(s.id, cancel_at_period_end=True)
+            else:
+                log.info("Canceling subscription " + s.id + " for " + c + " immediately")
+                stripe.Subscription.delete(s.id, prorate=False)
     except Exception as e:
         log.info(e)
         pass

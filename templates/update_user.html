@@ -75,6 +75,7 @@
       membershipFee: 0,
       hasMembership: {{ member.membership_fee | lower }},
       hasSubscription: {{ member.has_subscription | lower }},
+      cancelAtPeriodEnd: {{ member.cancel_at_period_end | lower }},
       hasPaymentMethod: {{ member.has_payment_method | lower }},
       cardEntered: false,
       membershipType: "{{ member.membership_type }}",
@@ -439,7 +440,9 @@
       $("#discordId").val(user.discordId);
     }
  
-    if (!user.hasSubscription) {
+    // A canceled membership stays active until the end of the paid period,
+    // but it won't renew, so show it as canceled
+    if (!user.hasSubscription || user.cancelAtPeriodEnd) {
       user.membershipIsCanceled = true;
       user.membershipFee = 0;
       user.lockerFee = 0;
@@ -575,6 +578,12 @@
     {% if not member.has_subscription %}
     <div class="alert alert-info shadow rounded" role="alert" style="width:85%;">
       You don't currently have an active membership. Choose a plan below to start one.
+    </div>
+    {% elif member.cancel_at_period_end %}
+    <div class="alert alert-warning shadow rounded" role="alert" style="width:85%;">
+      Your membership has been canceled and will end on <b>{{ member.subscription_ends_at }}</b>.
+      You'll keep your membership benefits until then. Choosing a plan below starts a new
+      membership right away.
     </div>
     {% elif member.subscription_status in ['past_due', 'unpaid', 'incomplete'] %}
     <div class="alert alert-danger shadow rounded" role="alert" style="width:85%;">
