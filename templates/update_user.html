@@ -24,6 +24,7 @@
     // The submit controls stay hidden and disabled unless JavaScript is running (issue #87)
     $("#btnSubmit").prop('disabled', false);
     $("#submitControls").removeClass("d-none");
+    $("#deleteControls").removeClass("d-none");
 
     var stripe = Stripe('{{stripe_pk}}');
     const elements = stripe.elements();
@@ -160,6 +161,17 @@
     // it stays on screen until the member starts typing a card
     let cardRequiredError = false;
 
+    // Save Changes stays disabled until the member changes something, so
+    // there's nothing to click when they only came to look
+    let formChanged = false;
+
+    function markFormChanged() {
+      if (!formChanged) {
+        formChanged = true;
+        setSubmitButtonState();
+      }
+    }
+
     function showError(field) {
       return submitAttempted || touched[field] == true;
     }
@@ -229,7 +241,7 @@
         if (!cardRequiredError) {
           $("#form_invalid").hide();
         }
-        $("#btnSubmit").prop('disabled', false);
+        $("#btnSubmit").prop('disabled', !formChanged);
       }
     };
   
@@ -266,6 +278,9 @@
     $("#discordId").on("blur", function() {
       user.discordId = $("#discordId").val();
     });
+
+    $("#fullName, #discordId").on("input", markFormChanged);
+    $("input[name='membershipRadio'], input[name='donationRadio'], input[name='payFreqRadio']").on("click", markFormChanged);
 
     $("input[name='membershipRadio']").click(function() {
 
@@ -335,6 +350,7 @@
         user.cardEntered = Object.values(cardEmpty).includes(false);
         if (user.cardEntered) {
           cardRequiredError = false;
+          markFormChanged();
         }
       });
 
@@ -353,6 +369,7 @@
       $("#cc-exp").attr("required","required");
       $("#cc-cvc").attr("required","required");
       $("#newPaymentMethodTable").show();
+      markFormChanged();
     });
 
     $("#btnSubmit").click(function(e) {
@@ -477,6 +494,7 @@
 
     $('#form1').preventDoubleSubmission();
     update_summary();
+    setSubmitButtonState();
 
   }); // End of document.ready
 
@@ -872,8 +890,8 @@
       </div>
     </div>
 
-    <!-- Submit, Cancel and Delete Membership Controls -->
-    <div class="card" style="width:85%;">
+    <!-- Submit Controls -->
+    <div class="card" style="width:85%;margin-bottom:25px;">
       <div class="card-body">
         <div class="invalid-feedback" id="form_invalid" style="padding-bottom: 10px;">
           Please fix the errors above before continuing
@@ -885,16 +903,26 @@
         </noscript>
         <div class="row g-3 d-none" id="submitControls">
           <div class="col-auto">
-            <button type="button" 
-                    class="btn btn-lg btn-danger btn-block"
-                    name="btnDeleteMembership" id="btnDeleteMembership" data-bs-toggle="modal" 
-                    data-bs-target="#deleteMembershipModal">Delete Membership?
-            </button>
+            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit" disabled>Save Changes</button>
           </div>
-          <div class="col">
-            <button type="submit" class="btn btn-lg btn-primary btn-block float-end" name="btnSubmit" id="btnSubmit" disabled>Save Changes</button>
-          </div>
-        </div>  
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Account: kept apart from Save Changes since it isn't part of
+         editing the form, and hidden without JavaScript like the submit controls -->
+    <div class="card d-none" style="width:85%;margin-bottom:25px;" id="deleteControls">
+      <h6 class="card-header">Delete Account</h6>
+      <div class="card-body">
+        <p>
+          Permanently removes your account, payment details and history.
+          Taking a break? Choose <b>Cancel Membership</b> in the Membership Plan section instead.
+        </p>
+        <button type="button"
+                class="btn btn-outline-danger"
+                name="btnDeleteMembership" id="btnDeleteMembership" data-bs-toggle="modal"
+                data-bs-target="#deleteMembershipModal">Delete Account…
+        </button>
       </div>
     </div>
 
@@ -907,7 +935,7 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h1 class="modal-title fs-5" id="deleteMembershipModalLabel">Delete Membership?</h1>
+            <h1 class="modal-title fs-5" id="deleteMembershipModalLabel">Delete Account?</h1>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
