@@ -21,6 +21,11 @@
  
   $( document ).ready(function() {
 
+    // The submit controls stay hidden and disabled unless JavaScript is running (issue #87)
+    $("#btnSubmit").prop('disabled', false);
+    $("#submitControls").removeClass("d-none");
+    $("#deleteControls").removeClass("d-none");
+
     var stripe = Stripe('{{stripe_pk}}');
     const elements = stripe.elements();
 
@@ -31,8 +36,6 @@
     cardNum.mount('#cc-number');
     cardExp.mount('#cc-exp');
     cardCvc.mount('#cc-cvc');
-
-    $("#update_notice").hide()
 
     $("#newPaymentMethodTable").hide();
     $("#rowMembershipFee").hide();
@@ -71,6 +74,7 @@
       membershipFee: 0,
       hasMembership: {{ member.membership_fee | lower }},
       hasSubscription: {{ member.has_subscription | lower }},
+      cancelAtPeriodEnd: {{ member.cancel_at_period_end | lower }},
       hasPaymentMethod: {{ member.has_payment_method | lower }},
       cardEntered: false,
       membershipType: "{{ member.membership_type }}",
@@ -84,7 +88,7 @@
       fullNameIsValid: true,
       ccNumberIsValid: true,
       ccExpDateIsValid: true,
-      ccCVVIsValid: true,
+      ccCVCIsValid: true,
       membershipFeeSubtotal: function () {
         return (this.membershipFee * this.paymentFrequency);
       },
@@ -148,76 +152,126 @@
       }
     };
 
+    // Only complain about a field once the member has visited it, or after
+    // they've tried to submit, so tabbing through the form stays quiet
+    const touched = {};
+    let submitAttempted = false;
+
+    // Set while the "Please enter a card in Payment Information" error is up, so
+    // it stays on screen until the member starts typing a card
+    let cardRequiredError = false;
+
+    // Save Changes stays disabled until the member changes something, so
+    // there's nothing to click when they only came to look
+    let formChanged = false;
+
+    function markFormChanged() {
+      if (!formChanged) {
+        formChanged = true;
+        setSubmitButtonState();
+      }
+    }
+
+    function showError(field) {
+      return submitAttempted || touched[field] == true;
+    }
+
+    function checkFullName() {
+      user.fullName = $("#fullName").val();
+      if (user.fullName == "" || user.fullName.trim().length === 0) {
+        $("#fullname-invalid").show();
+        return false;
+      }
+      $("#fullname-invalid").hide();
+      return true;
+    }
+
+    // A new card is optional here, but once the member starts typing one, all
+    // three card fields have to be complete. Stripe marks a field invalid once
+    // something wrong is typed in it, but an empty field isn't "invalid", so
+    // track whether each one is empty or complete (from Stripe's change events)
+    const cardEmpty = { "cc-number": true, "cc-exp": true, "cc-cvc": true };
+    const cardComplete = { "cc-number": false, "cc-exp": false, "cc-cvc": false };
+
+    function cardFieldIsValid(id) {
+      if (!user.cardEntered) {
+        return true;
+      }
+      return cardComplete[id] && !document.getElementById(id).classList.contains('StripeElement--invalid');
+    }
+
+    // Like showError, but a card field Stripe has flagged invalid is shown right away
+    function showCardError(id) {
+      return document.getElementById(id).classList.contains('StripeElement--invalid') || showError(id);
+    }
+
     function setSubmitButtonState() {
 
-      const cardNum = document.querySelector('#cc-number');
-      if (cardNum.classList.contains('StripeElement--invalid') == true) {
-        user.ccNumberIsValid = false;
-        $('#cc-number-invalid').show();
-      } else {
-        user.ccNumberIsValid = true;
-        $('#cc-number-invalid').hide();
+      user.ccNumberIsValid = cardFieldIsValid("cc-number");
+      user.ccExpDateIsValid = cardFieldIsValid("cc-exp");
+      user.ccCVCIsValid = cardFieldIsValid("cc-cvc");
+
+      for (const id of ["cc-number", "cc-exp", "cc-cvc"]) {
+        $('#' + id + '-invalid').toggle(!cardFieldIsValid(id) && showCardError(id));
       }
 
-      const cardExp = document.querySelector('#cc-exp');
-      if (cardExp.classList.contains('StripeElement--invalid') == true) {
-        user.ccExpDateIsValid = false;
-        $('#cc-exp-invalid').show();
-      } else {
-        user.ccExpDateIsValid = true;
-        $('#cc-exp-invalid').hide();
+      msgArray = [];
+      if (user.fullNameIsValid == false && showError("fullName")) {
+        msgArray.push("<a href=\"#fullName\" class=\"text-danger\">Full Name</a>");
       }
 
-      const cardCvc = document.querySelector('#cc-cvc');
-      if (cardCvc.classList.contains('StripeElement--invalid') == true) {
-        user.ccCVCIsValid = false;
-        $('#cc-cvc-invalid').show();
-      } else {
-        user.ccCVCIsValid = true;
-        $('#cc-cvc-invalid').hide();
+      if (user.ccNumberIsValid == false && showCardError("cc-number")) {
+        msgArray.push("<a href=\"#cc-number\" class=\"text-danger\">CC Num</a>");
       }
 
-      if (user.fullNameIsValid == false || 
-          user.ccNumberIsValid == false || 
-          user.ccExpDateIsValid == false || 
-          user.ccCVCIsValid == false ) {
+      if (user.ccExpDateIsValid == false && showCardError("cc-exp")) {
+        msgArray.push("<a href=\"#cc-exp\" class=\"text-danger\">CC Exp Date</a>");
+      }
 
-        msgArray = [];
-        if (user.fullNameIsValid == false) {
-          msgArray.push("Full Name");
-        }
+      if (user.ccCVCIsValid == false && showCardError("cc-cvc")) {
+        msgArray.push("<a href=\"#cc-cvc\" class=\"text-danger\">CC CVC</a>");
+      }
 
-        if (user.ccNumberIsValid == false) {
-          msgArray.push("CC Num");
-        }
-
-        if (user.ccExpDateIsValid == false) {
-          msgArray.push("CC Exp Date");
-        }
-
-        if (user.ccCVCIsValid == false) {
-          msgArray.push("CC CVC");
-        }
-        
+      if (msgArray.length > 0) {
         msg = "The following fields above are either missing or invalid, please fix: <b>" + msgArray.join(", ") + "</b>";
         $("#form_invalid").html(msg);
         $("#form_invalid").show();
         $("#btnSubmit").prop('disabled', true);
       } else {
-        $("#form_invalid").hide();
-        $("#btnSubmit").prop('disabled', false);
+        if (!cardRequiredError) {
+          $("#form_invalid").hide();
+        }
+        $("#btnSubmit").prop('disabled', !formChanged);
       }
     };
   
-    $("#fullName").on("blur", function() {
-      user.fullName = $("#fullName").val();
-      if (user.fullName == "" || user.fullName.trim().length === 0) {
-        $("#fullname-invalid").show();
-        user.fullNameIsValid = false;
-      } else {
-        $("#fullname-invalid").hide();
-        user.fullNameIsValid = true;
+    // Scrolls to the field with this id and puts the cursor in it. The card
+    // fields are Stripe iframes, so they're focused through Stripe.
+    const stripeFields = { "cc-number": cardNum, "cc-exp": cardExp, "cc-cvc": cardCvc };
+    function focusField(id) {
+      const field = document.getElementById(id);
+      if (!field) {
+        return false;
       }
+      field.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (stripeFields[id]) {
+        stripeFields[id].focus();
+      } else {
+        field.focus({ preventScroll: true });
+      }
+      return true;
+    }
+
+    // Links in the error summary jump to their field
+    $("#form_invalid").on("click", "a[href^='#']", function(e) {
+      if (focusField($(this).attr("href").substring(1))) {
+        e.preventDefault();
+      }
+    });
+
+    $("#fullName").on("blur", function() {
+      touched.fullName = true;
+      user.fullNameIsValid = checkFullName();
       setSubmitButtonState();
     });
 
@@ -225,11 +279,21 @@
       user.discordId = $("#discordId").val();
     });
 
+    $("#fullName, #discordId").on("input", markFormChanged);
+    $("input[name='membershipRadio'], input[name='donationRadio'], input[name='payFreqRadio']").on("click", markFormChanged);
+
     $("input[name='membershipRadio']").click(function() {
 
       $("#pageIsDirty").val(1);
       var fee = $("input[name='membershipRadio']:checked").val();
-    
+
+      // A "Please enter a card" error only applies to the plan it was shown for;
+      // canceling doesn't need a card at all
+      if (cardRequiredError) {
+        cardRequiredError = false;
+        setSubmitButtonState();
+      }
+
       user.membershipIsCanceled = false;
 
       if (fee == "m") {
@@ -257,10 +321,12 @@
       };
 
       if (fee != "c") {
-        $("#donation0").prop("checked", true);
+        // Keep the member's current donation and payment frequency when
+        // switching between plans
+        $("#donation" + user.donationAmount).prop("checked", true);
         $("input[name='donationRadio']").prop("disabled",false);
 
-        $("#paymentFreq0").prop("checked", true);
+        $("#paymentFreq" + user.paymentFrequency).prop("checked", true);
         $("input[name='payFreqRadio']").prop("disabled",false);
       }
 
@@ -279,21 +345,22 @@
       update_summary();
     });
     
-    cardNum.on('change', function(event) {
-      user.cardEntered = !event.empty;
-    });
+    for (const [id, element] of Object.entries(stripeFields)) {
+      element.on('change', function(event) {
+        cardEmpty[id] = event.empty;
+        cardComplete[id] = event.complete;
+        user.cardEntered = Object.values(cardEmpty).includes(false);
+        if (user.cardEntered) {
+          cardRequiredError = false;
+          markFormChanged();
+        }
+      });
 
-    cardNum.on('blur', function(event) {
-      setSubmitButtonState();
-    });
-
-    cardExp.on('blur', function(event) {
-      setSubmitButtonState();
-    });
-
-    cardCvc.on('blur', function(event) {
-      setSubmitButtonState();
-    });
+      element.on('blur', function(event) {
+        touched[id] = true;
+        setSubmitButtonState();
+      });
+    }
 
     $("#btnCardDelete").click(function() {
       console.log("deleting card " + user.currentPaymentMethod );
@@ -304,16 +371,28 @@
       $("#cc-exp").attr("required","required");
       $("#cc-cvc").attr("required","required");
       $("#newPaymentMethodTable").show();
+      markFormChanged();
     });
 
     $("#btnSubmit").click(function(e) {
+
+      // Re-check everything, showing errors on fields the member hasn't visited yet
+      submitAttempted = true;
+      cardRequiredError = false;
+      user.fullNameIsValid = checkFullName();
+      setSubmitButtonState();
+      if ($("#btnSubmit").prop('disabled')) {
+        e.preventDefault();
+        return;
+      }
 
       if (!user.hasPaymentMethod && !user.cardEntered) {
         const fee = $("input[name='membershipRadio']:checked").val();
         if ($("#pageIsDirty").val() == "1" && (fee == "m" || fee == "m+l")) {
           e.preventDefault();
-          $("#form_invalid").html("Please enter a card in <b>Payment Information</b> before choosing a membership plan.");
+          $("#form_invalid").html("Please enter a card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b>.");
           $("#form_invalid").show();
+          cardRequiredError = true;
           return;
         }
         $("#deleteCurrentPaymentMethod").val("0");
@@ -323,8 +402,9 @@
       if (user.hasPaymentMethod && !user.cardEntered && $("#deleteCurrentPaymentMethod").val() == "1") {
         if ($("input[name='membershipRadio']:checked").val() != "c") {
           e.preventDefault();
-          $("#form_invalid").html("Please enter a new card in <b>Payment Information</b>, or choose <b>Cancel Membership</b> to remove your card.");
+          $("#form_invalid").html("Please enter a new card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b>.");
           $("#form_invalid").show();
+          cardRequiredError = true;
           return;
         }
         e.preventDefault();
@@ -344,7 +424,8 @@
           if (result.error && result.error.message){
             console.log(result.error.message);
             setSubmitButtonState();
-            $("#form_invalid").html(result.error.message);
+            // Stripe's message is about the card, so link it to the card fields
+            $("#form_invalid").empty().append($("<a>", { href: "#cc-number", "class": "text-danger", text: result.error.message }));
             $("#form_invalid").show();
           } else {
             $("#btnSubmit").html("Updating...");
@@ -358,10 +439,6 @@
             $("#btnSubmit").prop('disabled', true);
             $('#form1').trigger('submit');
       }
-    });
-
-    $("#btnCancel").click(function() {
-      window.location.replace("/");
     });
 
     $("#btnYesDelete").click(function() {
@@ -380,11 +457,15 @@
       $("#discordId").val(user.discordId);
     }
  
-    if (!user.hasSubscription) {
+    // A canceled membership stays active until the end of the paid period,
+    // but it won't renew, so show it as canceled
+    if (!user.hasSubscription || user.cancelAtPeriodEnd) {
       user.membershipIsCanceled = true;
       user.membershipFee = 0;
       user.lockerFee = 0;
+      user.donationAmount = 0;
       $("#membershipCanceled").prop("checked", true);
+      $("#donation0").prop("checked", true);
       $("input[name='donationRadio']").prop("disabled",true);
       $("input[name='payFreqRadio']").prop("disabled",true);
     } else {
@@ -417,18 +498,7 @@
 
     $('#form1').preventDoubleSubmission();
     update_summary();
-
-    {% with messages = get_flashed_messages(category_filter=["success"]) %}
-      {% if messages %}
-
-      $("#update_notice").show();
-
-      $("#update_notice").fadeTo(5000, 500).slideUp(500, function(){
-        $("#update_notice").slideUp(500);
-      });
-      
-      {% endif %}
-    {% endwith %}
+    setSubmitButtonState();
 
   }); // End of document.ready
 
@@ -437,15 +507,20 @@
 
 <body>
 
-<!-- Appearance is controlled via JS, only shows on form update refresh -->
-<div class="alert alert-success" role="alert" name="update_notice" id="update_notice">
-  <strong>Your membership information has been updated...</strong>
-</div>
-
 {% with errors = get_flashed_messages(category_filter=["error"]) %}
   {% for error in errors %}
   <div class="alert alert-danger" role="alert">
     <strong>{{ error }}</strong>
+  </div>
+  {% endfor %}
+{% endwith %}
+
+{# Only rendered after a save, so it can't flash on a normal page load #}
+{% with saved = get_flashed_messages(category_filter=["success"]) %}
+  {% for message in saved %}
+  <div class="alert alert-success alert-dismissible" role="status">
+    <strong>{{ message }}</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
   {% endfor %}
 {% endwith %}
@@ -516,6 +591,12 @@
     {% if not member.has_subscription %}
     <div class="alert alert-info shadow rounded" role="alert" style="width:85%;">
       You don't currently have an active membership. Choose a plan below to start one.
+    </div>
+    {% elif member.cancel_at_period_end %}
+    <div class="alert alert-success shadow rounded" role="alert" style="width:85%;">
+      Your membership has been canceled and will end on <b>{{ member.subscription_ends_at }}</b>.
+      You'll keep your membership benefits until then. Choosing a plan below starts a new
+      membership right away.
     </div>
     {% elif member.subscription_status in ['past_due', 'unpaid', 'incomplete'] %}
     <div class="alert alert-danger shadow rounded" role="alert" style="width:85%;">
@@ -615,7 +696,7 @@
           </li>
           <li class="list-group-item">
             <input class="form-check-input me-1" type="radio" name="membershipRadio" value="m+l" id="membershipFeeAndLocker">
-            <label class="form-check-label stretched-link" for="membershipFeeAndLocker">${{ mf }} / Month Membership + {{ lf }} / Month Locker Fee </label>
+            <label class="form-check-label stretched-link" for="membershipFeeAndLocker">${{ mf }} / Month Membership + ${{ lf }} / Month Locker Fee </label>
           </li>
           <li class="list-group-item">
             <input class="form-check-input me-1" type="radio" name="membershipRadio" value="c" id="membershipCanceled">
@@ -725,7 +806,7 @@
             <input 
               type="button" 
               class="btn btn-danger btn-block" 
-              value="Delete Card?"
+              value="Delete Card"
               name="btnCardDelete" 
               id="btnCardDelete" />
           </div>
@@ -823,27 +904,39 @@
       </div>
     </div>
 
-    <!-- Submit, Cancel and Delete Membership Controls -->
-    <div class="card" style="width:85%;">
+    <!-- Submit Controls -->
+    <div class="card" style="width:85%;margin-bottom:25px;">
       <div class="card-body">
         <div class="invalid-feedback" id="form_invalid" style="padding-bottom: 10px;">
           Please fix the errors above before continuing
         </div>
-        <div class="row g-3">
+        <noscript>
+          <div class="alert alert-danger" role="alert">
+            <strong>JavaScript is required.</strong> Please enable JavaScript in your browser and reload this page to continue.
+          </div>
+        </noscript>
+        <div class="row g-3 d-none" id="submitControls">
           <div class="col-auto">
-            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit">Submit</button>
+            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit" disabled>Save Changes</button>
           </div>
-          <div class="col-auto">
-            <button type="button" class="btn btn-lg btn-secondary btn-block" name="btnCancel" id="btnCancel">Cancel</button>
-          </div>
-          <div class="col">
-            <button type="button" 
-                    class="btn btn-lg btn-danger btn-block float-end"
-                    name="btnDeleteMembership" id="btnDeleteMembership" data-bs-toggle="modal" 
-                    data-bs-target="#deleteMembershipModal">Delete Membership?
-            </button>
-          </div>
-        </div>  
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Account: kept apart from Save Changes since it isn't part of
+         editing the form, and hidden without JavaScript like the submit controls -->
+    <div class="card d-none" style="width:85%;margin-bottom:25px;" id="deleteControls">
+      <h6 class="card-header">Delete Account</h6>
+      <div class="card-body">
+        <p>
+          Permanently removes your account, payment details and history.
+          Taking a break? Choose <b>Cancel Membership</b> in the Membership Plan section instead.
+        </p>
+        <button type="button"
+                class="btn btn-outline-danger"
+                name="btnDeleteMembership" id="btnDeleteMembership" data-bs-toggle="modal"
+                data-bs-target="#deleteMembershipModal">Delete Account…
+        </button>
       </div>
     </div>
 
@@ -856,7 +949,7 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h1 class="modal-title fs-5" id="deleteMembershipModalLabel">Delete Membership?</h1>
+            <h1 class="modal-title fs-5" id="deleteMembershipModalLabel">Delete Account?</h1>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -872,7 +965,7 @@
           <p>
             However, if you are sure you want to do this, clicking the <strong>Yes, 
             I'm sure, delete it.</strong> button below will delete all traces of 
-            your existence (which includes your debt / credit card and login access) 
+            your existence (which includes your debit / credit card and login access) 
             in our systems.  You'll have to create a new account if you ever decide 
             to re-join SYN Shop.
           </p>
@@ -880,7 +973,7 @@
           <p class="alert alert-warning shadow rounded">
             If there is anything you want to let us know about before
             leaving, please reach out to the board of directors either in 
-            Discord or by emailing <a href="mailto:support@synshop.org">board@synshop.org</a>
+            Discord or by emailing <a href="mailto:support@synshop.org">support@synshop.org</a>
           </p>
           </div>
           <div class="modal-footer">
