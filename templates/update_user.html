@@ -321,10 +321,12 @@
       };
 
       if (fee != "c") {
-        $("#donation0").prop("checked", true);
+        // Keep the member's current donation and payment frequency when
+        // switching between plans
+        $("#donation" + user.donationAmount).prop("checked", true);
         $("input[name='donationRadio']").prop("disabled",false);
 
-        $("#paymentFreq0").prop("checked", true);
+        $("#paymentFreq" + user.paymentFrequency).prop("checked", true);
         $("input[name='payFreqRadio']").prop("disabled",false);
       }
 
@@ -802,7 +804,7 @@
             <input 
               type="button" 
               class="btn btn-danger btn-block" 
-              value="Delete Card?"
+              value="Delete Card"
               name="btnCardDelete" 
               id="btnCardDelete" />
           </div>
