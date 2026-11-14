@@ -463,7 +463,9 @@
       user.membershipIsCanceled = true;
       user.membershipFee = 0;
       user.lockerFee = 0;
+      user.donationAmount = 0;
       $("#membershipCanceled").prop("checked", true);
+      $("#donation0").prop("checked", true);
       $("input[name='donationRadio']").prop("disabled",true);
       $("input[name='payFreqRadio']").prop("disabled",true);
     } else {
