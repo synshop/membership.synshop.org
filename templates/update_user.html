@@ -388,7 +388,7 @@
         const fee = $("input[name='membershipRadio']:checked").val();
         if ($("#pageIsDirty").val() == "1" && (fee == "m" || fee == "m+l")) {
           e.preventDefault();
-          $("#form_invalid").html("Please enter a card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b> before choosing a membership plan.");
+          $("#form_invalid").html("Please enter a card in <b><a href=\"#cc-number\" class=\"text-danger\">Payment Information</a></b>.");
           $("#form_invalid").show();
           cardRequiredError = true;
           return;
