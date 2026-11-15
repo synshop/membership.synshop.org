@@ -33,3 +33,25 @@ Test Cards
 6011111111111117 (discover)
 378282246310005  (amex)
 """
+
+# Set to True when the app runs behind a reverse proxy (Caddy in production).
+# Used to record the signer's real IP address on electronic waivers.
+# Leave False when running `python server.py` directly.
+# Set to True when behind reverse proxy like Caddy in prod or False when running `python server.py` directly
+# Enables recording real IP on electronic waivers.
+IS_BEHIND_PROXY = False
+
+# only set to True if this is the one true production instance, all others are False
+IS_DEV = False
+
+"""
+Test Cards
+4242424242424242 (visa)
+5555555555554444 (mastercard)
+6011111111111117 (discover)
+378282246310005  (amex)
+
+4000002500003155 (visa: 3D Secure at setup only)
+4000002760003184 (visa: always requires 3D Secure)
+4000008260003178 (visa: authenticates, then is declined)
+"""

@@ -13,11 +13,16 @@
   <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/card-js.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/waiver.js') }}"></script>
   <script src="https://js.stripe.com/v3/"></script>
 
   <script language="javascript">
   
   $( document ).ready(function() {
+
+    // The submit controls stay hidden and disabled unless JavaScript is running (issue #87)
+    $("#btnSubmit").prop('disabled', false);
+    $("#submitControls").removeClass("d-none");
 
     var stripe = Stripe('{{stripe_pk}}');
     const elements = stripe.elements();
@@ -30,7 +35,6 @@
     cardExp.mount('#cc-exp');
     cardCvc.mount('#cc-cvc');
 
-    $("#update_notice").hide()
 
     $("#rowMembershipFee").hide();
     $("#rowLockerFee").hide();
@@ -72,6 +76,9 @@
       ccNumberIsValid: false,
       ccExpDateIsValid: false,
       ccCVCIsValid: false,
+      waiverAgree: false,
+      waiverSignatureIsValid: false,
+      waiverDobIsValid: false,
       membershipFeeSubtotal: function () {
         return (this.membershipFee * this.paymentFrequency)
       },
@@ -113,57 +120,79 @@
 
     };
     
+    // Only complain about a field once the member has visited it, or after
+    // they've tried to submit, so tabbing through the form stays quiet
+    const touched = {};
+    let submitAttempted = false;
+
+    function showError(field) {
+      return submitAttempted || touched[field] == true;
+    }
+
+    function checkFullName() {
+      user.fullName = $("#fullName").val();
+      if (user.fullName == "" || user.fullName.trim().length === 0) {
+        $("#fullname-invalid").show();
+        return false;
+      }
+      $("#fullname-invalid").hide();
+      return true;
+    }
+
+    // Stripe marks a card field invalid once something wrong is typed in it, but
+    // an empty field isn't "invalid", so also track whether each one is complete
+    // (from Stripe's change events)
+    const cardComplete = { "cc-number": false, "cc-exp": false, "cc-cvc": false };
+
+    function cardFieldIsValid(id) {
+      return cardComplete[id] && !document.getElementById(id).classList.contains('StripeElement--invalid');
+    }
+
+    // Like showError, but a card field Stripe has flagged invalid is shown right away
+    function showCardError(id) {
+      return document.getElementById(id).classList.contains('StripeElement--invalid') || showError(id);
+    }
+
     function setSubmitButtonState() {
 
-      const cardNum = document.querySelector('#cc-number');
-      if (cardNum.classList.contains('StripeElement--invalid') == true) {
-        user.ccNumberIsValid = false;
-        $('#cc-number-invalid').show();
-      } else {
-        user.ccNumberIsValid = true;
-        $('#cc-number-invalid').hide();
-      }
-      
-      const cardExp = document.querySelector('#cc-exp');
-      if (cardExp.classList.contains('StripeElement--invalid') == true) {
-        user.ccExpDateIsValid = false;
-        $('#cc-exp-invalid').show();
-      } else {
-        user.ccExpDateIsValid = true;
-        $('#cc-exp-invalid').hide();
+      user.ccNumberIsValid = cardFieldIsValid("cc-number");
+      user.ccExpDateIsValid = cardFieldIsValid("cc-exp");
+      user.ccCVCIsValid = cardFieldIsValid("cc-cvc");
+
+      for (const id of ["cc-number", "cc-exp", "cc-cvc"]) {
+        $('#' + id + '-invalid').toggle(!cardFieldIsValid(id) && showCardError(id));
       }
 
-      const cardCvc = document.querySelector('#cc-cvc');
-      if (cardCvc.classList.contains('StripeElement--invalid') == true) {
-        user.ccCVCIsValid = false;
-        $('#cc-cvc-invalid').show();
-      } else {
-        user.ccCVCIsValid = true;
-        $('#cc-cvc-invalid').hide();
+      msgArray = [];
+      if (user.fullNameIsValid == false && showError("fullName")) {
+        msgArray.push("<a href=\"#fullName\" class=\"text-danger\">Full Name</a>");
       }
-  
-      if (user.fullNameIsValid == false || 
-          user.ccNumberIsValid == false || 
-          user.ccExpDateIsValid == false || 
-          user.ccCVCIsValid == false ) {
 
-        msgArray = [];
-        if (user.fullNameIsValid == false) {
-          msgArray.push("Full Name");
-        }
+      if (user.waiverDobIsValid == false && showError("waiverDob")) {
+        msgArray.push("<a href=\"#waiverDobMonth\" class=\"text-danger\">Date of Birth</a>");
+      }
 
-        if (user.ccNumberIsValid == false) {
-          msgArray.push("CC Num");
-        }
+      if (user.waiverSignatureIsValid == false && showError("waiverSignature")) {
+        msgArray.push("<a href=\"#waiverSignature\" class=\"text-danger\">Waiver Signature</a>");
+      }
 
-        if (user.ccExpDateIsValid == false) {
-          msgArray.push("CC Exp Date");
-        }
+      if (user.waiverAgree == false && showError("waiverAgree")) {
+        msgArray.push("<a href=\"#waiverAgree\" class=\"text-danger\">Waiver Agreement checkbox</a>");
+      }
 
-        if (user.ccCVCIsValid == false) {
-          msgArray.push("CC CVC");
-        }
-        
+      if (user.ccNumberIsValid == false && showCardError("cc-number")) {
+        msgArray.push("<a href=\"#cc-number\" class=\"text-danger\">CC Num</a>");
+      }
+
+      if (user.ccExpDateIsValid == false && showCardError("cc-exp")) {
+        msgArray.push("<a href=\"#cc-exp\" class=\"text-danger\">CC Exp Date</a>");
+      }
+
+      if (user.ccCVCIsValid == false && showCardError("cc-cvc")) {
+        msgArray.push("<a href=\"#cc-cvc\" class=\"text-danger\">CC CVC</a>");
+      }
+
+      if (msgArray.length > 0) {
         msg = "The following fields above are either missing or invalid, please fix: <b>" + msgArray.join(", ") + "</b>";
         $("#form_invalid").html(msg);
         $("#form_invalid").show();
@@ -174,15 +203,45 @@
       }
     };
 
-    $("#fullName").on("blur", function() {
-      user.fullName = $("#fullName").val();
-      if (user.fullName == "" || user.fullName.trim().length === 0) {
-        $("#fullname-invalid").show();
-        user.fullNameIsValid = false;
-      } else {
-        $("#fullname-invalid").hide();
-        user.fullNameIsValid = true;
+    // Links in the error summary scroll to their field and put the cursor in it.
+    // The card fields are Stripe iframes, so they're focused through Stripe.
+    const stripeFields = { "cc-number": cardNum, "cc-exp": cardExp, "cc-cvc": cardCvc };
+    $("#form_invalid").on("click", "a[href^='#']", function(e) {
+      const id = $(this).attr("href").substring(1);
+      const field = document.getElementById(id);
+      if (!field) {
+        return;
       }
+      e.preventDefault();
+      field.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (stripeFields[id]) {
+        stripeFields[id].focus();
+      } else {
+        field.focus({ preventScroll: true });
+      }
+    });
+
+    $("#fullName").on("blur", function() {
+      touched.fullName = true;
+      user.fullNameIsValid = checkFullName();
+      setSubmitButtonState();
+    });
+
+    $("#waiverAgree").on("change", function() {
+      touched.waiverAgree = true;
+      user.waiverAgree = $("#waiverAgree").is(":checked");
+      setSubmitButtonState();
+    });
+
+    $("#waiverSignature").on("blur", function() {
+      touched.waiverSignature = true;
+      user.waiverSignatureIsValid = checkWaiverSignature();
+      setSubmitButtonState();
+    });
+
+    $("#waiverDob").on("change blur", function() {
+      touched.waiverDob = true;
+      user.waiverDobIsValid = checkWaiverDob();
       setSubmitButtonState();
     });
 
@@ -214,21 +273,32 @@
       update_summary();
     });
 
-    cardNum.on('blur', function(event) {
-      setSubmitButtonState();
-    });
+    for (const [id, element] of Object.entries(stripeFields)) {
+      element.on('change', function(event) {
+        cardComplete[id] = event.complete;
+      });
 
-    cardExp.on('blur', function(event) {
-      setSubmitButtonState();
-    });
-
-    cardCvc.on('blur', function(event) {
-      setSubmitButtonState();
-    });
+      element.on('blur', function(event) {
+        touched[id] = true;
+        setSubmitButtonState();
+      });
+    }
 
     $("#btnSubmit").click(function(e) {
 
       e.preventDefault();
+
+      // The button starts out enabled, so re-check everything before charging,
+      // showing errors on fields the member hasn't visited yet
+      submitAttempted = true;
+      user.fullNameIsValid = checkFullName();
+      user.waiverDobIsValid = checkWaiverDob();
+      user.waiverSignatureIsValid = checkWaiverSignature();
+      user.waiverAgree = $("#waiverAgree").is(":checked");
+      setSubmitButtonState();
+      if ($("#btnSubmit").prop('disabled')) {
+        return;
+      }
 
       var cardData = {'name': user.fullName,};
       stripe.createToken(cardNum, cardData).then(function(result) {
@@ -243,21 +313,9 @@
         }
       });
     });
-
-    $("#btnCancel").click(function() {
-      window.location.replace("/");
-    });
     
     update_summary();
     $('#form1').preventDoubleSubmission();
-
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-
-      $("#update_notice").show();
-      
-      {% endif %}
-    {% endwith %}
 
   }); // End of document.ready
 
@@ -266,11 +324,6 @@
 </head>
 
 <body>
-
-  <!-- Appearance is controlled via JS, only shows on form update refresh -->
-  <div class="alert alert-success" role="alert" name="update_notice" id="update_notice">
-    <strong>You don't appear to have a billing account, so we are starting the set up process for you</strong>
-  </div>
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-sm" style="background-color: #eee;">
@@ -313,10 +366,25 @@
 
 <div class="container-sm" style="margin-top:25px;margin-bottom:25px;">
 
+  {% with waiver_errors = get_flashed_messages(category_filter=["waiver"]) %}
+    {% if waiver_errors %}
+    <div class="alert alert-danger shadow rounded" role="alert" style="width:85%;">
+      <strong>Your liability waiver wasn't signed, so your membership has not been created:</strong>
+      <ul class="mb-0">
+        {% for e in waiver_errors %}
+        <li>{{ e }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  {% endwith %}
+
   <form method="POST" name="form1" id="form1">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" name="email" value="{{ email }}"/>
     <input type="hidden" name="stripeToken" id="stripeToken" value="" />
+    <input type="hidden" name="waiverVersion" value="{{ waiver_version }}" />
+    <input type="hidden" name="waiverSha256" value="{{ waiver_sha256 }}" />
 
     <div class="alert alert-warning shadow rounded" role="alert" style="width:85%;">
     <h4 class="alert-heading">Welcome to SYN Shop!</h4>
@@ -412,7 +480,7 @@
           </li>
           <li class="list-group-item">
             <input class="form-check-input me-1" type="radio" name="membershipRadio" value="m+l" id="membershipFeeAndLocker">
-            <label class="form-check-label stretched-link" for="membershipFeeAndLocker">${{ mf }} / Month Membership + {{ lf }} / Month Locker Fee </label>
+            <label class="form-check-label stretched-link" for="membershipFeeAndLocker">${{ mf }} / Month Membership + ${{ lf }} / Month Locker Fee </label>
           </li>
         </ul>
           
@@ -524,7 +592,7 @@
     </div>
 
     <!-- Membership Summary -->
-    <div class="card" style="width:85%;margin-bottom:15px;">
+    <div class="card" style="width:85%;margin-bottom:25px;">
       <h6 class="card-header">Membership Summary</h6>
       <div class="card-body table-responsive-md">
 
@@ -568,18 +636,23 @@
       </div>
     </div>
 
+    <!-- Liability Waiver -->
+    {% include "_waiver_card.html" %}
+
     <!-- Submit and Cancel  Controls -->
     <div class="card" style="width:85%;">
       <div class="card-body">
         <div class="invalid-feedback" id="form_invalid" style="padding-bottom: 10px;">
           Please fix the errors above before continuing
         </div>
-        <div class="row g-3">
-          <div class="col-auto">
-            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit">Submit</button>
+        <noscript>
+          <div class="alert alert-danger" role="alert">
+            <strong>JavaScript is required.</strong> Please enable JavaScript in your browser and reload this page to continue.
           </div>
+        </noscript>
+        <div class="row g-3 d-none" id="submitControls">
           <div class="col-auto">
-            <button type="button" class="btn btn-lg btn-secondary btn-block" name="btnCancel" id="btnCancel">Cancel</button>
+            <button type="submit" class="btn btn-lg btn-primary btn-block" name="btnSubmit" id="btnSubmit" disabled>Sign Waiver and Create Membership</button>
           </div>
         </div>  
       </div>
